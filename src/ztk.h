@@ -1,0 +1,62 @@
+/*
+  Copyright 2015 James Hunt <james@jameshunt.us>
+
+  This file is part of ztk.
+
+  ztk is free software: you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free
+  Software Foundation, either version 3 of the License, or (at your
+  option) any later version.
+
+  ztk is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+  for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with ztk.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef ZTK_H
+#define ZTK_H
+
+#include <assert.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <vigor.h>
+
+#define FORMAT_YAML  1
+#define FORMAT_JSON  2
+#define FORMAT_DELIM 3
+
+typedef struct {
+	void   *zmq;
+	list_t  sockopts;
+	list_t  binds;
+	list_t  connects;
+
+	uint8_t input;
+	char    input_delim;
+
+	uint8_t output;
+	char    output_delim;
+} ztk_config_t;
+
+typedef struct {
+	int     name;
+	void   *value;
+	size_t  len;
+	list_t  l;
+} ztk_sockopt_t;
+
+typedef struct {
+	char    *address;
+	void    *socket;
+	list_t   l;
+} ztk_endpoint_t;
+
+ztk_config_t* ztk_configure(int argc, char **argv);
+int ztk_bind(ztk_config_t *cfg, ztk_endpoint_t *e, int type);
+int ztk_connect(ztk_config_t *cfg, ztk_endpoint_t *e, int type);
+
+#endif
