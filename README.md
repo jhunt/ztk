@@ -27,7 +27,7 @@ You've been warned.  :)
 Copyright
 ---------
 
-ztk is Copyright 2015 James Hunt <james@jameshunt.h>
+ztk is Copyright 2015 James Hunt <james@jameshunt.us>
 
 Licensing
 ---------
