@@ -20,7 +20,8 @@
 AUTOMAKE_OPTIONS = foreign subdir-objects
 ACLOCAL_AMFLAGS  = -I build
 
-AM_CFLAGS = -Wall -Wextra
+AM_CFLAGS = -Wall -Wextra @GCOV_CFLAGS@
+AM_LDFLAGS = @GCOV_LDFLAGS@
 
 ############################################################
 
@@ -36,3 +37,40 @@ t_zpush_SOURCES = src/ztk.h src/ztk.c src/push.c src/pull.c t/zpush.c
 t_zpush_LDADD   = -lctap -lvigor
 
 TESTS = $(check_PROGRAMS)
+
+############################################################
+
+.PHONY: coverage-clean coverage-report coverage clean-local-cov distclean-local
+distclean-local:
+	rm -rf t/tmp
+
+clean-local: clean-local-gcda
+clean-local-gcda:
+	touch sac.gcda
+	find . -name '*.gc??' | xargs rm
+
+if GCOV_ENABLED
+coverage-clean:
+	@rm -fr coverage
+	@find . -name "*.gcda" -exec rm {} \;
+	@lcov --directory . --zerocounters
+
+coverage-report:
+	@mkdir -p coverage
+	@lcov --compat-libtool --directory . --base-directory . --capture --output-file coverage/app.info
+	@genhtml -o coverage/ coverage/app.info
+
+coverage:
+	@make coverage-report
+
+clean-local-cov:
+	@make coverage-clean
+
+check:
+	@make coverage
+
+else
+coverage:
+	@echo >&2 "nothin doin"
+clean-local-cov:
+endif
