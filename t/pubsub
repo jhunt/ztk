@@ -1,6 +1,6 @@
 #!./t/run
 
-ENDPOINT="tcp://127.0.0.1:32910"
+ENDPOINT="ipc://${DATADIR}/pubsub.1"
 ./ztk sub --connect ${ENDPOINT} > ${DATAFILE} &
 SUB_PID=$!
 
