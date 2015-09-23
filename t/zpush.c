@@ -12,6 +12,72 @@ static pid_t fork_zpull(int fd, ...);
 TESTS {
 	alarm(5);
 
+	subtest { /* missing --bind / --connect option to zpush */
+		alarm(5);
+
+		int pfd[2];
+		int rc;
+
+		rc = pipe(pfd);
+		if (rc != 0)
+			BAIL_OUT("pipe(pfd[]) failed!");
+
+		pid_t pid = fork();
+		if (pid < 0)
+			BAIL_OUT("fork() failed");
+
+		if (pid == 0) {
+			dup2(pfd[1], 1);
+			dup2(pfd[1], 2);
+			close(pfd[0]);
+			close(pfd[1]);
+
+			char *argv[] = {"zpush", NULL};
+			exit(ztk_push(1, argv));
+		}
+
+		close(pfd[1]);
+		readln_ok(pfd[0], "zpush: you must specify either --bind or --connect option(s)");
+		close(pfd[0]);
+
+		int st;
+		waitpid(pid, &st, 0);
+		is_int(WEXITSTATUS(st), 1, "zpush exits with rc 1 when args are incorrect");
+	}
+
+	subtest { /* both --bind / --connect options to zpush */
+		alarm(5);
+
+		int pfd[2];
+		int rc;
+
+		rc = pipe(pfd);
+		if (rc != 0)
+			BAIL_OUT("pipe(pfd[]) failed!");
+
+		pid_t pid = fork();
+		if (pid < 0)
+			BAIL_OUT("fork() failed");
+
+		if (pid == 0) {
+			dup2(pfd[1], 1);
+			dup2(pfd[1], 2);
+			close(pfd[0]);
+			close(pfd[1]);
+
+			char *argv[] = {"zpush", "--bind", "tcp://here:1234", "--connect", "tcp://there:2345", NULL};
+			exit(ztk_push(5, argv));
+		}
+
+		close(pfd[1]);
+		readln_ok(pfd[0], "zpush: you must specify either --bind or --connect option(s)");
+		close(pfd[0]);
+
+		int st;
+		waitpid(pid, &st, 0);
+		is_int(WEXITSTATUS(st), 1, "zpush exits with rc 1 when args are incorrect");
+	}
+
 	subtest { /* BIND pull, CONNECT push */
 		int pipe_in[2], pipe_out[2];
 		int rc;

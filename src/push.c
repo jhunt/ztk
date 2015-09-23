@@ -34,11 +34,17 @@ int ztk_push(int argc, char **argv)
 
 	for_each_object(e, &ztk->binds, l) {
 		rc = ztk_bind(ztk, e, ZMQ_PUSH);
-		assert(rc == 0);
+		if (rc != 0) {
+			fprintf(stderr, "zpush: bind of %s failed: %s\n", e->address, zmq_strerror(errno));
+			exit(1);
+		}
 	}
 	for_each_object(e, &ztk->connects, l) {
 		rc = ztk_connect(ztk, e, ZMQ_PUSH);
-		assert(rc == 0);
+		if (rc != 0) {
+			fprintf(stderr, "zpush: connect to %s failed: %s\n", e->address, zmq_strerror(errno));
+			exit(1);
+		}
 	}
 
 	char buf[8192];
