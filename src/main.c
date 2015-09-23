@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	for_each_object(o, &ztk->sockopts, l)
 		fprintf(stderr, "OPTION: %02x (%lub) = [%s]\n", o->name, o->len, (char *) o->value);
 
-	ztk_endpoint_t *e;
+	ztk_peer_t *e;
 	for_each_object(e, &ztk->binds, l)
 		fprintf(stderr, "BIND '%s'\n", e->address);
 	for_each_object(e, &ztk->connects, l)

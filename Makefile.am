@@ -30,3 +30,9 @@ zpub_SOURCES = src/ztk.h src/ztk.c src/zpub.c
 zsub_SOURCES = src/ztk.h src/ztk.c src/zsub.c
 
 ############################################################
+
+check_PROGRAMS = t/zpush
+t_zpush_SOURCES = src/ztk.h src/ztk.c src/push.c src/pull.c t/zpush.c
+t_zpush_LDADD   = -lctap -lvigor
+
+TESTS = $(check_PROGRAMS)

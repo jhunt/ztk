@@ -19,46 +19,54 @@
 
 #include "ztk.h"
 
-int main(int argc, char **argv)
+int ztk_pull(int argc, char **argv)
 {
 	ztk_config_t *ztk = ztk_configure(argc, argv);
 
-	if (list_isempty(&ztk->binds)) {
-		fprintf(stderr, "zpub: you must specify at least one --bind option\n");
-		exit(1);
-	}
-
-	if (!list_isempty(&ztk->connects)) {
-		fprintf(stderr, "zpub: --connect option makes no sense\n");
+	if (( list_isempty(&ztk->binds) &&  list_isempty(&ztk->connects))
+	 || (!list_isempty(&ztk->binds) && !list_isempty(&ztk->connects))) {
+		fprintf(stderr, "zpull: you must specify either --bind or --connect option(s)\n");
 		exit(1);
 	}
 
 	int rc;
 	ztk_peer_t *e;
+
+	int n;
 	for_each_object(e, &ztk->binds, l) {
-		rc = ztk_bind(ztk, e, ZMQ_PUB);
+		n++;
+		rc = ztk_bind(ztk, e, ZMQ_PULL);
 		assert(rc == 0);
-		fprintf(stderr, "bound to %s\n", e->address);
+	}
+	for_each_object(e, &ztk->connects, l) {
+		n++;
+		rc = ztk_connect(ztk, e, ZMQ_PULL);
+		assert(rc == 0);
 	}
 
-	char buf[8192];
-	while (fgets(buf, 8192, stdin) != NULL) {
-		size_t l;
-		char *a, *b, c;
-		a = b = buf;
-		while (*b) {
-			a = b;
-			while (*b && *b != ztk->input_delim && *b != '\n') b++;
-			l = b - a; c = *b; *b++ = '\0';
+	/* recv */
+	signal_handlers();
+	while (!signalled()) {
+		if (ztk_poll(ztk, -1) < 0)
+			continue;
 
-			for_each_object(e, &ztk->binds, l) {
-				zmq_send(e->socket, a, l, c == '\n' ? 0 : ZMQ_SNDMORE);
+		ztk_peer_t *e;
+		while ((e = ztk_next(ztk, ZMQ_POLLIN)) != NULL) {
+			pdu_t *pdu = pdu_recv(e->socket);
+			fprintf(stdout, "%s", pdu_type(pdu));
+			char *frame;
+			int i = 1;
+			while ((frame = pdu_string(pdu, i++)) != NULL) {
+				fprintf(stdout, "|%s", frame);
+				free(frame);
 			}
+			fprintf(stdout, "\n");
+			fflush(stdout);
 		}
 	}
 
-	for_each_object(e, &ztk->binds, l) {
-		vzmq_shutdown(e->socket, 0);
+	for_each_peer(e, ztk) {
+		zmq_close(e->socket);
 	}
 	zmq_ctx_destroy(ztk->zmq);
 

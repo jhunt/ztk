@@ -21,17 +21,19 @@
 #include <string.h>
 #include <getopt.h>
 
-static void s_ztk_configure_bind(ztk_config_t *ztk, const char *endpoint)
+static void s_ztk_configure_bind(ztk_config_t *ztk, const char *peer)
 {
-	ztk_endpoint_t *z = vmalloc(sizeof(ztk_endpoint_t));
-	z->address = strdup(endpoint);
+	ztk_peer_t *z = vmalloc(sizeof(ztk_peer_t));
+	z->address = strdup(peer);
+	list_push(&ztk->peers, &z->all);
 	list_push(&ztk->binds, &z->l);
 }
 
-static void s_ztk_configure_connect(ztk_config_t *ztk, const char *endpoint)
+static void s_ztk_configure_connect(ztk_config_t *ztk, const char *peer)
 {
-	ztk_endpoint_t *z = vmalloc(sizeof(ztk_endpoint_t));
-	z->address = strdup(endpoint);
+	ztk_peer_t *z = vmalloc(sizeof(ztk_peer_t));
+	z->address = strdup(peer);
+	list_push(&ztk->peers, &z->all);
 	list_push(&ztk->connects, &z->l);
 }
 
@@ -49,6 +51,7 @@ ztk_config_t* ztk_configure(int argc, char **argv)
 {
 	ztk_config_t *ztk = vmalloc(sizeof(ztk_config_t));
 
+	list_init(&ztk->peers);
 	list_init(&ztk->binds);
 	list_init(&ztk->connects);
 	list_init(&ztk->sockopts);
@@ -249,11 +252,11 @@ ztk_config_t* ztk_configure(int argc, char **argv)
 	return ztk;
 }
 
-void s_set_sockopts(ztk_config_t *cfg, ztk_endpoint_t *e, int type, int after)
+void s_set_sockopts(ztk_config_t *ztk, ztk_peer_t *e, int type, int after)
 {
 	int subd = 0;
 	ztk_sockopt_t *opt;
-	for_each_object(opt, &cfg->sockopts, l) {
+	for_each_object(opt, &ztk->sockopts, l) {
 
 		if (type == ZMQ_SUB) {
 			if (opt->name == ZMQ_SUBSCRIBE && !after)
@@ -275,22 +278,66 @@ void s_set_sockopts(ztk_config_t *cfg, ztk_endpoint_t *e, int type, int after)
 	}
 }
 
-int ztk_bind(ztk_config_t *cfg, ztk_endpoint_t *e, int type)
+int ztk_bind(ztk_config_t *ztk, ztk_peer_t *e, int type)
 {
-	e->socket = zmq_socket(cfg->zmq, type);
-	s_set_sockopts(cfg, e, type, 0);
+	e->socket = zmq_socket(ztk->zmq, type);
+	s_set_sockopts(ztk, e, type, 0);
 	return zmq_bind(e->socket, e->address);
 }
 
-int ztk_connect(ztk_config_t *cfg, ztk_endpoint_t *e, int type)
+int ztk_connect(ztk_config_t *ztk, ztk_peer_t *e, int type)
 {
-	e->socket = zmq_socket(cfg->zmq, type);
-	s_set_sockopts(cfg, e, type, 0);
+	e->socket = zmq_socket(ztk->zmq, type);
+	s_set_sockopts(ztk, e, type, 0);
 
 	int rc = zmq_connect(e->socket, e->address);
 	if (rc != 0) return rc;
 
-	s_set_sockopts(cfg, e, type, 1);
+	s_set_sockopts(ztk, e, type, 1);
 	return 0;
 }
 
+int ztk_poll(ztk_config_t *ztk, long timeout)
+{
+	if (!ztk->poll.items) {
+		int n = list_len(&ztk->peers);
+		ztk->poll.items = vcalloc(n, sizeof(zmq_pollitem_t));
+		ztk->poll.n     = n;
+
+		ztk_peer_t *e;
+		for_each_peer(e, ztk) {
+			n--;
+			if (n < 0)
+				return -1;
+			ztk->poll.items[n].socket  = e->socket;
+			ztk->poll.items[n].fd      = -1;
+			ztk->poll.items[n].events  = ZMQ_POLLIN;
+			ztk->poll.items[n].revents = 0;
+		}
+	}
+
+	return zmq_poll(ztk->poll.items, ztk->poll.n, timeout);
+}
+
+ztk_peer_t *ztk_next(ztk_config_t *ztk, int events)
+{
+	if (!ztk->poll.items)
+		return NULL;
+
+	int i;
+	for (i = 0; i < ztk->poll.n; i++) {
+		if ((ztk->poll.items[i].revents & events) == events) {
+			ztk->poll.items[i].revents = 0;
+
+			ztk_peer_t *e;
+			for_each_peer(e, ztk) {
+				if (e->socket == ztk->poll.items[i].socket)
+					return e;
+			}
+
+			return NULL;
+		}
+	}
+
+	return NULL;
+}

@@ -34,12 +34,18 @@ typedef struct {
 	list_t  sockopts;
 	list_t  binds;
 	list_t  connects;
+	list_t  peers;
 
 	uint8_t input;
 	char    input_delim;
 
 	uint8_t output;
 	char    output_delim;
+
+	struct {
+		zmq_pollitem_t *items;
+		int             n;
+	} poll;
 } ztk_config_t;
 
 typedef struct {
@@ -53,10 +59,20 @@ typedef struct {
 	char    *address;
 	void    *socket;
 	list_t   l;
-} ztk_endpoint_t;
+	list_t   all;
+} ztk_peer_t;
+
+#define for_each_peer(e, ztk)     for_each_object((e), &((ztk)->peers), all)
+#define for_each_bind(e, ztk)     for_each_object((e), &((ztk)->binds), l)
+#define for_each_connect(e, ztk)  for_each_object((e), &((ztk)->connects), l)
 
 ztk_config_t* ztk_configure(int argc, char **argv);
-int ztk_bind(ztk_config_t *cfg, ztk_endpoint_t *e, int type);
-int ztk_connect(ztk_config_t *cfg, ztk_endpoint_t *e, int type);
+int ztk_bind(ztk_config_t *cfg, ztk_peer_t *e, int type);
+int ztk_connect(ztk_config_t *cfg, ztk_peer_t *e, int type);
+int ztk_poll(ztk_config_t *cfg, long timeout);
+ztk_peer_t *ztk_next(ztk_config_t *cfg, int events);
+
+int ztk_push(int argc, char **argv);
+int ztk_pull(int argc, char **argv);
 
 #endif

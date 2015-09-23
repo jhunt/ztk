@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 
 	int rc;
 	int n = 0;
-	ztk_endpoint_t *e;
+	ztk_peer_t *e;
 	for_each_object(e, &ztk->connects, l) {
 		rc = ztk_connect(ztk, e, ZMQ_SUB);
 		assert(rc == 0);
