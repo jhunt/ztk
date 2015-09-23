@@ -1,0 +1,35 @@
+#!./t/run
+
+./ztk pull --bind tcp://127.0.0.1:32909 > ${DATADIR}/pipeline1 &
+PULL_PID=$!
+
+cat <<EOF | ./ztk push --connect tcp://127.0.0.1:32909
+BEACON|12345
+RETRANS|<whatever>|blah
+PING
+EOF
+kill -TERM ${PULL_PID}
+
+line_ok ${DATADIR}/pipeline1 1 "BEACON|12345"
+line_ok ${DATADIR}/pipeline1 2 "RETRANS|<whatever>|blah"
+line_ok ${DATADIR}/pipeline1 3 "PING"
+
+
+./ztk pull --connect tcp://127.0.0.1:32910 > ${DATADIR}/pipeline2 &
+PULL_PID=$!
+
+cat <<EOF | ./ztk push --bind tcp://127.0.0.1:32910
+BEACON|12345
+RETRANS|<whatever>|blah
+PING
+EOF
+kill -TERM ${PULL_PID}
+
+line_ok ${DATADIR}/pipeline2 1 "BEACON|12345"
+line_ok ${DATADIR}/pipeline2 2 "RETRANS|<whatever>|blah"
+line_ok ${DATADIR}/pipeline2 3 "PING"
+
+echo PASS
+exit 0
+
+# vim:ft=sh

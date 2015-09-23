@@ -1,0 +1,22 @@
+#!./t/run
+
+for CMD in push pull pub sub; do
+	E=$(./ztk $CMD 2>&1 >/dev/null)
+	if [[ "$E" != "./ztk: you must specify either --bind or --connect option(s)" ]]; then
+		echo >&2 "$CMD: bad error when neither --bind nor --connect specified; error was: ($E)"
+		echo FAIL
+		exit 1
+	fi
+
+	E=$(./ztk $CMD --bind IGNORED --connect IGNORED 2>&1 >/dev/null)
+	if [[ "$E" != "./ztk: you must specify either --bind or --connect option(s)" ]]; then
+		echo >&2 "$CMD: bad error when specifying both --bind and --connect; error was: ($E)"
+		echo FAIL
+		exit 1
+	fi
+done
+
+echo PASS
+exit 0
+
+# vim:ft=sh

@@ -19,26 +19,31 @@
 
 #include "ztk.h"
 
-int main(int argc, char **argv)
+int ztk_pub(int argc, char **argv)
 {
 	ztk_config_t *ztk = ztk_configure(argc, argv);
 
-	if (list_isempty(&ztk->binds)) {
-		fprintf(stderr, "zpub: you must specify at least one --bind option\n");
-		exit(1);
-	}
-
-	if (!list_isempty(&ztk->connects)) {
-		fprintf(stderr, "zpub: --connect option makes no sense\n");
-		exit(1);
+	if (( list_isempty(&ztk->binds) &&  list_isempty(&ztk->connects))
+	 || (!list_isempty(&ztk->binds) && !list_isempty(&ztk->connects))) {
+		fprintf(stderr, "%s: you must specify either --bind or --connect option(s)\n", argv[0]);
+		return 1;
 	}
 
 	int rc;
 	ztk_peer_t *e;
-	for_each_object(e, &ztk->binds, l) {
+	for_each_bind(e, ztk) {
 		rc = ztk_bind(ztk, e, ZMQ_PUB);
-		assert(rc == 0);
-		fprintf(stderr, "bound to %s\n", e->address);
+		if (rc != 0) {
+			fprintf(stderr, "%s: bind to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
+			return 2;
+		}
+	}
+	for_each_connect(e, ztk) {
+		rc = ztk_connect(ztk, e, ZMQ_PUB);
+		if (rc != 0) {
+			fprintf(stderr, "%s: connect to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
+			return 2;
+		}
 	}
 
 	char buf[8192];
@@ -46,19 +51,20 @@ int main(int argc, char **argv)
 		size_t l;
 		char *a, *b, c;
 		a = b = buf;
+
 		while (*b) {
 			a = b;
 			while (*b && *b != ztk->input_delim && *b != '\n') b++;
 			l = b - a; c = *b; *b++ = '\0';
 
-			for_each_object(e, &ztk->binds, l) {
+			for_each_peer(e, ztk) {
 				zmq_send(e->socket, a, l, c == '\n' ? 0 : ZMQ_SNDMORE);
 			}
 		}
 	}
 
-	for_each_object(e, &ztk->binds, l) {
-		vzmq_shutdown(e->socket, 0);
+	for_each_peer(e, ztk) {
+		zmq_close(e->socket);
 	}
 	zmq_ctx_destroy(ztk->zmq);
 

@@ -1,0 +1,21 @@
+#!./t/run
+
+ENDPOINT="tcp://127.0.0.1:32910"
+./ztk sub --connect ${ENDPOINT} > ${DATAFILE} &
+SUB_PID=$!
+
+(sleep 1 ; cat) <<EOF | ./ztk pub --bind ${ENDPOINT}
+BEACON|12345
+RETRANS|<whatever>|blah
+PING
+EOF
+kill -TERM ${SUB_PID}
+
+line_ok ${DATAFILE} 1 "BEACON|12345"
+line_ok ${DATAFILE} 2 "RETRANS|<whatever>|blah"
+line_ok ${DATAFILE} 3 "PING"
+
+echo PASS
+exit 0
+
+# vim:ft=sh

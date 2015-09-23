@@ -19,7 +19,7 @@
 
 #include "ztk.h"
 
-int ztk_push(int argc, char **argv)
+int ztk_sub(int argc, char **argv)
 {
 	ztk_config_t *ztk = ztk_configure(argc, argv);
 
@@ -32,39 +32,39 @@ int ztk_push(int argc, char **argv)
 	int rc;
 	ztk_peer_t *e;
 
-	for_each_object(e, &ztk->binds, l) {
-		rc = ztk_bind(ztk, e, ZMQ_PUSH);
+	for_each_bind(e, ztk) {
+		rc = ztk_bind(ztk, e, ZMQ_SUB);
 		if (rc != 0) {
-			fprintf(stderr, "%s: bind of %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
+			fprintf(stderr, "%s: connect to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
 			return 2;
 		}
 	}
-	for_each_object(e, &ztk->connects, l) {
-		rc = ztk_connect(ztk, e, ZMQ_PUSH);
+	for_each_connect(e, ztk) {
+		rc = ztk_connect(ztk, e, ZMQ_SUB);
 		if (rc != 0) {
 			fprintf(stderr, "%s: connect to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
 			return 2;
 		}
 	}
 
-	char buf[8192];
-	while (fgets(buf, 8192, stdin) != NULL) {
-		size_t l;
-		char *a, *b, c;
-		a = b = buf;
+	/* recv */
+	signal_handlers();
+	while (!signalled()) {
+		if (ztk_poll(ztk, -1) < 0)
+			continue;
 
-		for_each_peer(e, ztk) {
-			zmq_send(e->socket, "", 0, ZMQ_SNDMORE);
-		}
-
-		while (*b) {
-			a = b;
-			while (*b && *b != ztk->input_delim && *b != '\n') b++;
-			l = b - a; c = *b; *b++ = '\0';
-
-			for_each_peer(e, ztk) {
-				zmq_send(e->socket, a, l,c == '\n' ? 0 : ZMQ_SNDMORE);
+		ztk_peer_t *e;
+		while ((e = ztk_next(ztk, ZMQ_POLLIN)) != NULL) {
+			pdu_t *pdu = pdu_recv(e->socket);
+			fprintf(stdout, "%s", pdu_type(pdu));
+			char *frame;
+			int i = 1;
+			while ((frame = pdu_string(pdu, i++)) != NULL) {
+				fprintf(stdout, "|%s", frame);
+				free(frame);
 			}
+			fprintf(stdout, "\n");
+			fflush(stdout);
 		}
 	}
 

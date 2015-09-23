@@ -25,27 +25,24 @@ int ztk_pull(int argc, char **argv)
 
 	if (( list_isempty(&ztk->binds) &&  list_isempty(&ztk->connects))
 	 || (!list_isempty(&ztk->binds) && !list_isempty(&ztk->connects))) {
-		fprintf(stderr, "zpull: you must specify either --bind or --connect option(s)\n");
+		fprintf(stderr, "%s: you must specify either --bind or --connect option(s)\n", argv[0]);
 		return 1;
 	}
 
 	int rc;
 	ztk_peer_t *e;
 
-	int n;
 	for_each_object(e, &ztk->binds, l) {
-		n++;
 		rc = ztk_bind(ztk, e, ZMQ_PULL);
 		if (rc != 0) {
-			fprintf(stderr, "zpull: connect to %s failed: %s\n", e->address, zmq_strerror(errno));
+			fprintf(stderr, "%s: connect to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
 			return 2;
 		}
 	}
 	for_each_object(e, &ztk->connects, l) {
-		n++;
 		rc = ztk_connect(ztk, e, ZMQ_PULL);
 		if (rc != 0) {
-			fprintf(stderr, "zpull: connect to %s failed: %s\n", e->address, zmq_strerror(errno));
+			fprintf(stderr, "%s: connect to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
 			return 2;
 		}
 	}

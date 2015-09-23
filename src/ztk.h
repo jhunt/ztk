@@ -22,6 +22,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #include <vigor.h>
 
@@ -74,5 +75,7 @@ ztk_peer_t *ztk_next(ztk_config_t *cfg, int events);
 
 int ztk_push(int argc, char **argv);
 int ztk_pull(int argc, char **argv);
+int ztk_pub(int argc, char **argv);
+int ztk_sub(int argc, char **argv);
 
 #endif

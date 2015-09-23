@@ -1,0 +1,21 @@
+#!/bin/bash
+
+DATADIR=$(mktemp -d)
+DATAFILE=${DATADIR}/data
+trap 'rm -rf ${DATADIR}' EXIT TERM QUIT
+
+line_ok() {
+	file=$1
+	line=$2
+	expect=$3
+	msg=${4:-$(basename ${file}):${line} should be "${expect}"}
+
+	got=$(sed -n ${line}p ${file})
+	if [[ "${got}" != "${expect}" ]]; then
+		echo >&2 "${msg}: FAILED"
+		echo >&2 "  expected '${expect}'"
+		echo >&2 "       got '${got}'"
+		echo FAIL
+		exit 1
+	fi
+}

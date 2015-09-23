@@ -19,19 +19,39 @@
 
 #include "ztk.h"
 
+typedef int (*main_fn)(int, char**);
+
+static struct {
+	const char *prog;
+	const char *name;
+	main_fn main;
+
+} COMMANDS[] = {
+	{ "zpub", "pub", ztk_pub },
+	{ "zsub", "sub", ztk_sub },
+	{ "zpush", "push", ztk_push },
+	{ "zpull", "pull", ztk_pull },
+	{ NULL, NULL, NULL },
+};
+
 int main(int argc, char **argv)
 {
-	ztk_config_t *ztk = ztk_configure(argc, argv);
+	int i;
+	for (i = 0; COMMANDS[i].name; i++) {
+		if (strcmp(argv[0], COMMANDS[i].prog) == 0) {
+			return (*COMMANDS[i].main)(argc, argv);
+		}
+	}
 
-	ztk_sockopt_t *o;
-	for_each_object(o, &ztk->sockopts, l)
-		fprintf(stderr, "OPTION: %02x (%lub) = [%s]\n", o->name, o->len, (char *) o->value);
+	if (argc > 1) {
+		for (i = 0; COMMANDS[i].name; i++) {
+			if (strcmp(argv[1], COMMANDS[i].name) == 0) {
+				argv[1] = argv[0];
+				return (*COMMANDS[i].main)(argc - 1, argv + 1);
+			}
+		}
+	}
 
-	ztk_peer_t *e;
-	for_each_object(e, &ztk->binds, l)
-		fprintf(stderr, "BIND '%s'\n", e->address);
-	for_each_object(e, &ztk->connects, l)
-		fprintf(stderr, "CONNECT '%s'\n", e->address);
-
-	return 0;
+	fprintf(stderr, "unrecognized command (try `%s (pub|sub|push|pull) [options]')\n", argv[0]);
+	return 1;
 }

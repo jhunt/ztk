@@ -48,10 +48,6 @@ AC_CHECK_LIB(pthread,
 	pthread_create,,
 	AC_MSG_ERROR(Missing pthread library))
 
-AC_CHECK_LIB(ctap,
-	main,,
-	AC_MSG_ERROR(Missing ctap testing library - see http://github.com/filefrog/ctap))
-
 AC_CHECK_LIB(vigor,
 	time_s,,
 	AC_MSG_ERROR(Missing libvigor - see http://github.com/filefrog/libvigor))

@@ -27,8 +27,6 @@ stamp-h?
 /zreq
 /zrep
 
-t/pipeline
-
 man/*.1
 man/*.2
 man/*.3

@@ -23,20 +23,19 @@ ACLOCAL_AMFLAGS  = -I build
 AM_CFLAGS = -Wall -Wextra @GCOV_CFLAGS@
 AM_LDFLAGS = @GCOV_LDFLAGS@
 
-############################################################
-
-bin_PROGRAMS = ztk zpub zsub
-ztk_SOURCES = src/ztk.h src/ztk.c src/main.c
-zpub_SOURCES = src/ztk.h src/ztk.c src/zpub.c
-zsub_SOURCES = src/ztk.h src/ztk.c src/zsub.c
+CORE_SRC := src/ztkh. src/ztk.c
+CORE_SRC += src/push.c src/pull.c
+CORE_SRC += src/pub.c src/sub.c
 
 ############################################################
 
-check_PROGRAMS = t/pipeline
-t_pipeline_SOURCES = src/ztk.h src/ztk.c src/push.c src/pull.c t/pipeline.c
-t_pipeline_LDADD   = -lctap -lvigor
+bin_PROGRAMS = ztk
+ztk_SOURCES = $(CORE_SRC) src/main.c
 
-TESTS = $(check_PROGRAMS)
+############################################################
+
+check_SCRIPTS = t/arg-validation t/pipeline t/pubsub
+TESTS = $(check_SCRIPTS)
 
 ############################################################
 
