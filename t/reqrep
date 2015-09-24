@@ -1,0 +1,25 @@
+#!./t/run
+
+ENDPOINT="ipc://${DATADIR}/reqrep.1"
+cat <<EOF |./ztk rep --bind ${ENDPOINT} > ${DATAFILE}.rep &
+REPLY1
+REPLY2
+REPLY3|should be unused|since there is no request|for it
+EOF
+REP_PID=$!
+
+cat <<EOF | ./ztk req --connect ${ENDPOINT} > ${DATAFILE}.req &
+REQUEST1
+REQUEST2
+EOF
+sleep 1
+kill -TERM ${REP_PID}
+
+line_ok ${DATAFILE}.rep 1 "REQUEST1"
+line_ok ${DATAFILE}.rep 2 "REQUEST2"
+
+line_ok ${DATAFILE}.req 1 "REPLY1"
+line_ok ${DATAFILE}.req 2 "REPLY2"
+
+exit 0
+# vim:ft=sh

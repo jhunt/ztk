@@ -1,0 +1,25 @@
+#!./t/run
+
+ENDPOINT="ipc://${DATADIR}/drouter.1"
+cat <<EOF |./ztk router --bind ${ENDPOINT} > ${DATAFILE}.router &
+REPLY1
+REPLY2
+REPLY3|should be unused|since there is no dealeruest|for it
+EOF
+ROUTER_PID=$!
+
+cat <<EOF | ./ztk dealer --connect ${ENDPOINT} > ${DATAFILE}.dealer &
+REQUEST1
+REQUEST2
+EOF
+sleep 1
+kill -TERM ${ROUTER_PID}
+
+line_ok ${DATAFILE}.router 1 "REQUEST1"
+line_ok ${DATAFILE}.router 2 "REQUEST2"
+
+line_ok ${DATAFILE}.dealer 1 "REPLY1"
+line_ok ${DATAFILE}.dealer 2 "REPLY2"
+
+exit 0
+# vim:ft=sh

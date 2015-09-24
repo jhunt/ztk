@@ -26,6 +26,8 @@ AM_LDFLAGS = @GCOV_LDFLAGS@
 CORE_SRC := src/ztkh. src/ztk.c
 CORE_SRC += src/push.c src/pull.c
 CORE_SRC += src/pub.c src/sub.c
+CORE_SRC += src/req.c src/rep.c
+CORE_SRC += src/dealer.c src/router.c
 
 ############################################################
 
@@ -34,7 +36,7 @@ ztk_SOURCES = $(CORE_SRC) src/main.c
 
 ############################################################
 
-check_SCRIPTS = t/arg-validation t/pipeline t/pubsub
+check_SCRIPTS = t/arg-validation t/pipeline t/pubsub t/reqrep t/drouter
 TESTS = $(check_SCRIPTS)
 
 ############################################################

@@ -370,7 +370,7 @@ ztk_peer_t *ztk_next(ztk_config_t *ztk, int events)
 	return NULL;
 }
 
-pdu_t *ztk_pdu(ztk_config_t *ztk, FILE *io)
+pdu_t *ztk_reply(ztk_config_t *ztk, pdu_t *orig, FILE *io)
 {
 	char s[8192];
 	if (fgets(s, 8192, io) == NULL)
@@ -386,13 +386,18 @@ pdu_t *ztk_pdu(ztk_config_t *ztk, FILE *io)
 		*b++ = '\0';
 
 		if (!pdu) {
-			pdu = pdu_make(a, 0);
+			pdu = orig ? pdu_reply(orig, a, 0) : pdu_make(a, 0);
 		} else {
 			pdu_extendf(pdu, "%s", a);
 		}
 	}
 
 	return pdu;
+}
+
+pdu_t *ztk_pdu(ztk_config_t *ztk, FILE *io)
+{
+	return ztk_reply(ztk, NULL, io);
 }
 
 void ztk_print(ztk_config_t *ztk, pdu_t *pdu, FILE *io)

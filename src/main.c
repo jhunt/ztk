@@ -27,10 +27,14 @@ static struct {
 	main_fn main;
 
 } COMMANDS[] = {
-	{ "zpub", "pub", ztk_pub },
-	{ "zsub", "sub", ztk_sub },
-	{ "zpush", "push", ztk_push },
-	{ "zpull", "pull", ztk_pull },
+	{ "zpub",    "pub",     ztk_pub    },
+	{ "zsub",    "sub",     ztk_sub    },
+	{ "zpush",   "push",    ztk_push   },
+	{ "zpull",   "pull",    ztk_pull   },
+	{ "zreq",    "req",     ztk_req    },
+	{ "zrep",    "rep",     ztk_rep    },
+	{ "zdealer", "dealer",  ztk_dealer },
+	{ "zrouter", "router",  ztk_router },
 	{ NULL, NULL, NULL },
 };
 
