@@ -1,0 +1,13 @@
+# travis ci
+
+language: c
+
+os:
+  - linux
+
+addons:
+  apt:
+    packages:
+      - libpcre3-dev
+
+script: ./ci build

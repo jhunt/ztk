@@ -4,7 +4,7 @@ ENDPOINT="ipc://${DATADIR}/pipeline.1"
 ./ztk pull --bind ${ENDPOINT} > ${DATAFILE} &
 PULL_PID=$!
 
-cat <<EOF | ./ztk push --connect ${ENDPOINT}
+(sleep 1 ; cat <<EOF) | ./ztk push --connect ${ENDPOINT}
 BEACON|12345
 RETRANS|<whatever>|blah
 PING
