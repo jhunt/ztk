@@ -41,8 +41,11 @@ static struct {
 int main(int argc, char **argv)
 {
 	int i;
+	char *argv0 = strdup(argv[0]);
+	char *bin = basename(argv0);
+
 	for (i = 0; COMMANDS[i].name; i++) {
-		if (strcmp(argv[0], COMMANDS[i].prog) == 0) {
+		if (strcmp(bin, COMMANDS[i].prog) == 0) {
 			return (*COMMANDS[i].main)(argc, argv);
 		}
 	}

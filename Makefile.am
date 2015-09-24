@@ -41,6 +41,18 @@ TESTS = $(check_SCRIPTS)
 
 ############################################################
 
+install-exec-hook:
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zpush$(EXEEXT)
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zpull$(EXEEXT)
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zpub$(EXEEXT)
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zsub$(EXEEXT)
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zreq$(EXEEXT)
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zrep$(EXEEXT)
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zdealer$(EXEEXT)
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zrouter$(EXEEXT)
+
+############################################################
+
 .PHONY: coverage-clean coverage-report coverage clean-local-cov distclean-local
 distclean-local:
 	rm -rf t/tmp
