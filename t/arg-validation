@@ -16,7 +16,5 @@ for CMD in push pull pub sub; do
 	fi
 done
 
-echo PASS
 exit 0
-
 # vim:ft=sh

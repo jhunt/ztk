@@ -15,7 +15,5 @@ line_ok ${DATAFILE} 1 "BEACON|12345"
 line_ok ${DATAFILE} 2 "RETRANS|<whatever>|blah"
 line_ok ${DATAFILE} 3 "PING"
 
-echo PASS
 exit 0
-
 # vim:ft=sh
