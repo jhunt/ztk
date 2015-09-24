@@ -29,49 +29,14 @@ int ztk_push(int argc, char **argv)
 		return 1;
 	}
 
-	int rc;
+	if (ztk_sockets(ztk, ZMQ_PUSH) != 0)
+		return 2;
+
+	pdu_t *pdu;
 	ztk_peer_t *e;
+	while ((pdu = ztk_pdu(ztk, stdin)))
+		for_each_peer(e, ztk)
+			pdu_send_and_free(pdu_dup(pdu, NULL), e->socket);
 
-	for_each_object(e, &ztk->binds, l) {
-		rc = ztk_bind(ztk, e, ZMQ_PUSH);
-		if (rc != 0) {
-			fprintf(stderr, "%s: bind of %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
-			return 2;
-		}
-	}
-	for_each_object(e, &ztk->connects, l) {
-		rc = ztk_connect(ztk, e, ZMQ_PUSH);
-		if (rc != 0) {
-			fprintf(stderr, "%s: connect to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
-			return 2;
-		}
-	}
-
-	char buf[8192];
-	while (fgets(buf, 8192, stdin) != NULL) {
-		size_t l;
-		char *a, *b, c;
-		a = b = buf;
-
-		for_each_peer(e, ztk) {
-			zmq_send(e->socket, "", 0, ZMQ_SNDMORE);
-		}
-
-		while (*b) {
-			a = b;
-			while (*b && *b != ztk->input_delim && *b != '\n') b++;
-			l = b - a; c = *b; *b++ = '\0';
-
-			for_each_peer(e, ztk) {
-				zmq_send(e->socket, a, l,c == '\n' ? 0 : ZMQ_SNDMORE);
-			}
-		}
-	}
-
-	for_each_peer(e, ztk) {
-		zmq_close(e->socket);
-	}
-	zmq_ctx_destroy(ztk->zmq);
-
-	return 0;
+	return ztk_shutdown(ztk);
 }

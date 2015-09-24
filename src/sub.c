@@ -29,23 +29,8 @@ int ztk_sub(int argc, char **argv)
 		return 1;
 	}
 
-	int rc;
-	ztk_peer_t *e;
-
-	for_each_bind(e, ztk) {
-		rc = ztk_bind(ztk, e, ZMQ_SUB);
-		if (rc != 0) {
-			fprintf(stderr, "%s: connect to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
-			return 2;
-		}
-	}
-	for_each_connect(e, ztk) {
-		rc = ztk_connect(ztk, e, ZMQ_SUB);
-		if (rc != 0) {
-			fprintf(stderr, "%s: connect to %s failed: %s\n", argv[0], e->address, zmq_strerror(errno));
-			return 2;
-		}
-	}
+	if (ztk_sockets(ztk, ZMQ_SUB) != 0)
+		return 2;
 
 	/* recv */
 	signal_handlers();
@@ -56,22 +41,10 @@ int ztk_sub(int argc, char **argv)
 		ztk_peer_t *e;
 		while ((e = ztk_next(ztk, ZMQ_POLLIN)) != NULL) {
 			pdu_t *pdu = pdu_recv(e->socket);
-			fprintf(stdout, "%s", pdu_type(pdu));
-			char *frame;
-			int i = 1;
-			while ((frame = pdu_string(pdu, i++)) != NULL) {
-				fprintf(stdout, "|%s", frame);
-				free(frame);
-			}
-			fprintf(stdout, "\n");
-			fflush(stdout);
+			ztk_print(ztk, pdu, stdout);
+			pdu_free(pdu);
 		}
 	}
 
-	for_each_peer(e, ztk) {
-		zmq_close(e->socket);
-	}
-	zmq_ctx_destroy(ztk->zmq);
-
-	return 0;
+	return ztk_shutdown(ztk);
 }

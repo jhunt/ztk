@@ -252,6 +252,34 @@ ztk_config_t* ztk_configure(int argc, char **argv)
 	return ztk;
 }
 
+int ztk_shutdown(ztk_config_t *ztk)
+{
+	ztk_peer_t *e;
+	for_each_peer(e, ztk) {
+		zmq_close(e->socket);
+	}
+	zmq_ctx_destroy(ztk->zmq);
+	return 0;
+}
+
+int ztk_sockets(ztk_config_t *ztk, int type)
+{
+	ztk_peer_t *e;
+	for_each_bind(e, ztk) {
+		if (ztk_bind(ztk, e, type) != 0) {
+			fprintf(stderr, "bind of %s failed :%s\n", e->address, zmq_strerror(errno));
+			return -1;
+		}
+	}
+	for_each_connect(e, ztk) {
+		if (ztk_connect(ztk, e, type) != 0) {
+			fprintf(stderr, "connect of %s failed :%s\n", e->address, zmq_strerror(errno));
+			return -1;
+		}
+	}
+	return 0;
+}
+
 void s_set_sockopts(ztk_config_t *ztk, ztk_peer_t *e, int type, int after)
 {
 	int subd = 0;
@@ -340,4 +368,43 @@ ztk_peer_t *ztk_next(ztk_config_t *ztk, int events)
 	}
 
 	return NULL;
+}
+
+pdu_t *ztk_pdu(ztk_config_t *ztk, FILE *io)
+{
+	char s[8192];
+	if (fgets(s, 8192, io) == NULL)
+		return NULL;
+
+	char *a, *b;
+	pdu_t *pdu = NULL;
+	a = b = s;
+
+	while (*b) {
+		a = b;
+		while (*b && *b != ztk->input_delim && *b != '\n') b++;
+		*b++ = '\0';
+
+		if (!pdu) {
+			pdu = pdu_make(a, 0);
+		} else {
+			pdu_extendf(pdu, "%s", a);
+		}
+	}
+
+	return pdu;
+}
+
+void ztk_print(ztk_config_t *ztk, pdu_t *pdu, FILE *io)
+{
+	char *frame;
+	int i = 1;
+
+	fprintf(io, "%s", pdu_type(pdu));
+	while ((frame = pdu_string(pdu, i++)) != NULL) {
+		fprintf(io, "%c%s", ztk->output_delim, frame);
+		free(frame);
+	}
+	fprintf(io, "\n");
+	fflush(io);
 }
