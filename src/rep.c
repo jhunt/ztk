@@ -21,7 +21,7 @@
 
 int ztk_rep(int argc, char **argv)
 {
-	ztk_config_t *ztk = ztk_configure(argc, argv);
+	ZTK *ztk = ztk_configure(argc, argv);
 
 	if (( list_isempty(&ztk->binds) &&  list_isempty(&ztk->connects))
 	 || (!list_isempty(&ztk->binds) && !list_isempty(&ztk->connects))) {

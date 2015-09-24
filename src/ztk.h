@@ -47,7 +47,7 @@ typedef struct {
 		zmq_pollitem_t *items;
 		int             n;
 	} poll;
-} ztk_config_t;
+} ZTK;
 
 typedef struct {
 	int     name;
@@ -67,16 +67,16 @@ typedef struct {
 #define for_each_bind(e, ztk)     for_each_object((e), &((ztk)->binds), l)
 #define for_each_connect(e, ztk)  for_each_object((e), &((ztk)->connects), l)
 
-ztk_config_t* ztk_configure(int argc, char **argv);
-int ztk_shutdown(ztk_config_t *cfg);
-int ztk_sockets(ztk_config_t *cfg, int type);
-int ztk_bind(ztk_config_t *cfg, ztk_peer_t *e, int type);
-int ztk_connect(ztk_config_t *cfg, ztk_peer_t *e, int type);
-int ztk_poll(ztk_config_t *cfg, long timeout);
-ztk_peer_t *ztk_next(ztk_config_t *cfg, int events);
-pdu_t *ztk_reply(ztk_config_t *cfg, pdu_t *pdu, FILE *io);
-pdu_t *ztk_pdu(ztk_config_t *cfg, FILE *io);
-void ztk_print(ztk_config_t *cfg, pdu_t *pdu, FILE *io);
+ZTK* ztk_configure(int argc, char **argv);
+int ztk_shutdown(ZTK *cfg);
+int ztk_sockets(ZTK *cfg, int type);
+int ztk_bind(ZTK *cfg, ztk_peer_t *e, int type);
+int ztk_connect(ZTK *cfg, ztk_peer_t *e, int type);
+int ztk_poll(ZTK *cfg, long timeout);
+ztk_peer_t *ztk_next(ZTK *cfg, int events);
+pdu_t *ztk_reply(ZTK *cfg, pdu_t *pdu, FILE *io);
+pdu_t *ztk_pdu(ZTK *cfg, FILE *io);
+void ztk_print(ZTK *cfg, pdu_t *pdu, FILE *io);
 
 int ztk_push(int argc, char **argv);
 int ztk_pull(int argc, char **argv);

@@ -21,7 +21,7 @@
 #include <string.h>
 #include <getopt.h>
 
-static void s_ztk_configure_bind(ztk_config_t *ztk, const char *peer)
+static void s_ztk_configure_bind(ZTK *ztk, const char *peer)
 {
 	ztk_peer_t *z = vmalloc(sizeof(ztk_peer_t));
 	z->address = strdup(peer);
@@ -29,7 +29,7 @@ static void s_ztk_configure_bind(ztk_config_t *ztk, const char *peer)
 	list_push(&ztk->binds, &z->l);
 }
 
-static void s_ztk_configure_connect(ztk_config_t *ztk, const char *peer)
+static void s_ztk_configure_connect(ZTK *ztk, const char *peer)
 {
 	ztk_peer_t *z = vmalloc(sizeof(ztk_peer_t));
 	z->address = strdup(peer);
@@ -37,7 +37,7 @@ static void s_ztk_configure_connect(ztk_config_t *ztk, const char *peer)
 	list_push(&ztk->connects, &z->l);
 }
 
-static void s_ztk_configure_sockopt(ztk_config_t *ztk, int name, const void *data, size_t len)
+static void s_ztk_configure_sockopt(ZTK *ztk, int name, const void *data, size_t len)
 {
 	ztk_sockopt_t *o = vmalloc(sizeof(ztk_sockopt_t));
 	o->name  = name;
@@ -47,9 +47,9 @@ static void s_ztk_configure_sockopt(ztk_config_t *ztk, int name, const void *dat
 	list_push(&ztk->sockopts, &o->l);
 }
 
-ztk_config_t* ztk_configure(int argc, char **argv)
+ZTK* ztk_configure(int argc, char **argv)
 {
-	ztk_config_t *ztk = vmalloc(sizeof(ztk_config_t));
+	ZTK *ztk = vmalloc(sizeof(ZTK));
 
 	list_init(&ztk->peers);
 	list_init(&ztk->binds);
@@ -252,7 +252,7 @@ ztk_config_t* ztk_configure(int argc, char **argv)
 	return ztk;
 }
 
-int ztk_shutdown(ztk_config_t *ztk)
+int ztk_shutdown(ZTK *ztk)
 {
 	ztk_peer_t *e;
 	for_each_peer(e, ztk) {
@@ -262,7 +262,7 @@ int ztk_shutdown(ztk_config_t *ztk)
 	return 0;
 }
 
-int ztk_sockets(ztk_config_t *ztk, int type)
+int ztk_sockets(ZTK *ztk, int type)
 {
 	ztk_peer_t *e;
 	for_each_bind(e, ztk) {
@@ -280,7 +280,7 @@ int ztk_sockets(ztk_config_t *ztk, int type)
 	return 0;
 }
 
-void s_set_sockopts(ztk_config_t *ztk, ztk_peer_t *e, int type, int after)
+void s_set_sockopts(ZTK *ztk, ztk_peer_t *e, int type, int after)
 {
 	int subd = 0;
 	ztk_sockopt_t *opt;
@@ -296,24 +296,24 @@ void s_set_sockopts(ztk_config_t *ztk, ztk_peer_t *e, int type, int after)
 		if (opt->name == ZMQ_SUBSCRIBE)
 			subd = 1;
 
-		fprintf(stderr, ">> setting %02x option\n", opt->name);
+		//fprintf(stderr, ">> setting %02x option\n", opt->name);
 		zmq_setsockopt(e->socket, opt->name, opt->value, opt->len);
 	}
 
 	if (type == ZMQ_SUB && !subd && after) {
-		fprintf(stderr, ">> setting catch-all ZMQ_SUBSCRIBE ('')\n");
+		//fprintf(stderr, ">> setting catch-all ZMQ_SUBSCRIBE ('')\n");
 		zmq_setsockopt(e->socket, ZMQ_SUBSCRIBE, "", 0);
 	}
 }
 
-int ztk_bind(ztk_config_t *ztk, ztk_peer_t *e, int type)
+int ztk_bind(ZTK *ztk, ztk_peer_t *e, int type)
 {
 	e->socket = zmq_socket(ztk->zmq, type);
 	s_set_sockopts(ztk, e, type, 0);
 	return zmq_bind(e->socket, e->address);
 }
 
-int ztk_connect(ztk_config_t *ztk, ztk_peer_t *e, int type)
+int ztk_connect(ZTK *ztk, ztk_peer_t *e, int type)
 {
 	e->socket = zmq_socket(ztk->zmq, type);
 	s_set_sockopts(ztk, e, type, 0);
@@ -325,7 +325,7 @@ int ztk_connect(ztk_config_t *ztk, ztk_peer_t *e, int type)
 	return 0;
 }
 
-int ztk_poll(ztk_config_t *ztk, long timeout)
+int ztk_poll(ZTK *ztk, long timeout)
 {
 	if (!ztk->poll.items) {
 		int n = list_len(&ztk->peers);
@@ -347,7 +347,7 @@ int ztk_poll(ztk_config_t *ztk, long timeout)
 	return zmq_poll(ztk->poll.items, ztk->poll.n, timeout);
 }
 
-ztk_peer_t *ztk_next(ztk_config_t *ztk, int events)
+ztk_peer_t *ztk_next(ZTK *ztk, int events)
 {
 	if (!ztk->poll.items)
 		return NULL;
@@ -370,7 +370,7 @@ ztk_peer_t *ztk_next(ztk_config_t *ztk, int events)
 	return NULL;
 }
 
-pdu_t *ztk_reply(ztk_config_t *ztk, pdu_t *orig, FILE *io)
+pdu_t *ztk_reply(ZTK *ztk, pdu_t *orig, FILE *io)
 {
 	char s[8192];
 	if (fgets(s, 8192, io) == NULL)
@@ -395,12 +395,12 @@ pdu_t *ztk_reply(ztk_config_t *ztk, pdu_t *orig, FILE *io)
 	return pdu;
 }
 
-pdu_t *ztk_pdu(ztk_config_t *ztk, FILE *io)
+pdu_t *ztk_pdu(ZTK *ztk, FILE *io)
 {
 	return ztk_reply(ztk, NULL, io);
 }
 
-void ztk_print(ztk_config_t *ztk, pdu_t *pdu, FILE *io)
+void ztk_print(ZTK *ztk, pdu_t *pdu, FILE *io)
 {
 	char *frame;
 	int i = 1;
