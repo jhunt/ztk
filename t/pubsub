@@ -1,7 +1,7 @@
 #!./t/run
 
 ENDPOINT="ipc://${DATADIR}/pubsub.1"
-./ztk sub --connect ${ENDPOINT} > ${DATAFILE} &
+./ztk sub --connect ${ENDPOINT} > ${DATAFILE}.1 &
 SUB_PID=$!
 
 (sleep 1 ; cat) <<EOF | ./ztk pub --bind ${ENDPOINT}
@@ -11,9 +11,24 @@ PING
 EOF
 kill -TERM ${SUB_PID}
 
-line_ok ${DATAFILE} 1 "BEACON|12345"
-line_ok ${DATAFILE} 2 "RETRANS|<whatever>|blah"
-line_ok ${DATAFILE} 3 "PING"
+line_ok ${DATAFILE}.1 1 "BEACON|12345"
+line_ok ${DATAFILE}.1 2 "RETRANS|<whatever>|blah"
+line_ok ${DATAFILE}.1 3 "PING"
+line_ok ${DATAFILE}.1 4 ""
+
+
+ENDPOINT="ipc://${DATADIR}/pubsub.2"
+./ztk sub -S AA -S E --connect ${ENDPOINT} > ${DATAFILE}.2 &
+SUB_PID=$!
+(sleep 1
+ for L in {A,B,C,D,E,F,G,H}; do
+   echo "${L}${L}.TOPIC|payload"
+  done) | ./ztk pub --bind ${ENDPOINT}
+kill -TERM ${SUB_PID}
+
+line_ok ${DATAFILE}.2 1 "AA.TOPIC|payload"
+line_ok ${DATAFILE}.2 2 "EE.TOPIC|payload"
+line_ok ${DATAFILE}.2 3 ""
 
 exit 0
 # vim:ft=sh
