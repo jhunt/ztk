@@ -18,6 +18,7 @@
  */
 
 #include "ztk.h"
+#include <libgen.h>
 
 typedef int (*main_fn)(int, char**);
 
