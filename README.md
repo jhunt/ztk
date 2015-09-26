@@ -1,7 +1,7 @@
 ztk - ZeroMQ Toolkit
 ====================
 
-**ztk** is a simple toolkit for interfacing with the excellent 0MQ
+**ztk** is a simple toolkit for interfacing with the excellent ZeroMQ
 message transport library.  It provides a set of small, sharp and
 simple tools to bind and connect to sockets of all types.
 
@@ -38,6 +38,46 @@ This software is so alpha right now, that other alpha software
 gets angry when I call it alpha software.
 
 You've been warned.  :)
+
+Use It For Testing ZeroMQ-based Applications
+--------------------------------------------
+
+While the original goal of this software was to enable shell
+scripts to implement communication patterns using ZeroMQ (without
+having to resort to other languages), it soon found a place as in
+running tests for ZeroMQ-based applications.
+
+Here's an example that uses a DEALER socket to communicate to a
+black box application:
+
+    #!/bin/bash
+
+    ROOT=$(mktemp -d bbtest.XXXXXX)
+    trap "rm -rf ${ROOT}" QUIT TERM INT
+
+    ENDPOINT="ipc://${ROOT}/socket"
+    ./blackboxd --foreground --bind ${ENDPOINT} &
+    DAEMON_PID=$!
+
+    RESPONSE=$(echo 'QUERY|answer to life/universe/everything?' | \
+                 ztk dealer --connect ${ENDPOINT})
+    if [[ "${RESPONSE:-(empty)}" != "ANSWER|42" ]]; then
+        echo >&2 "failed to answer the question"
+        echo >&2 "   expected: 'ANSWER|42'"
+        echo >&2 "        got: '${RESPONSE}'"
+        exit 1
+    fi
+
+    kill -TERM ${DAEMON_PID}
+
+    exit 0
+
+**NOTE:** When using ztk in this manner, it is _vital_ that you
+make use of the `--recv-timeout` and `--send-timeout` options,
+which set the `ZMQ_RCVTIMEO` and `ZMQ_SNDTIMEO` socket options.
+This way, if the application being tested is misbehaving, your ztk
+client won't hang indefinitely waiting for a reply that may never
+come.
 
 Copyright
 ---------

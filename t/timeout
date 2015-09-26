@@ -1,0 +1,16 @@
+#!./t/run
+
+ENDPOINT="ipc://${DATADIR}/timeout.1"
+# socket mismatch is a common source of bugs, which
+# is why --timeout was added in the first place...
+yes PUBLISH | ./ztk pub --bind ${ENDPOINT} &
+PUB_PID=$!
+
+# try to consume from our publisher (incorrectly) with
+# a dealer.  after 1s, it should timeout and exit
+./ztk dealer --connect ${ENDPOINT} --recv-timeout 1000 > ${DATAFILE}
+
+line_ok ${DATAFILE} 1 ""
+
+exit 0
+# vim:ft=sh
