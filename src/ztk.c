@@ -92,6 +92,8 @@ ZTK* ztk_configure(int argc, char **argv)
 		{ "send-timeout",     required_argument, NULL, '\013' },
 		{ "recv-timeout",     required_argument, NULL, '\014' },
 		{ "tcp-keepalive",    required_argument, NULL, '\015' },
+		{ "poll-timeout",     required_argument, NULL, '\016' },
+		{ "timeout",          required_argument, NULL,    't' },
 
 		{ "input-delimiter",  required_argument, NULL, '\020' },
 		{ "output-delimiter", required_argument, NULL, '\021' },
@@ -239,6 +241,18 @@ ZTK* ztk_configure(int argc, char **argv)
 			s_ztk_configure_sockopt(ztk, ZMQ_TCP_KEEPALIVE, &v.i, sizeof(v.i));
 			break;
 
+		case '\016': /* --poll-timeout */
+			v.i = atoi(optarg);
+			ztk->poll.timeout = v.i;
+			break;
+
+		case 't': /* --timeout */
+			v.i = atoi(optarg);
+			s_ztk_configure_sockopt(ztk, ZMQ_LINGER,   &v.i, sizeof(v.i));
+			s_ztk_configure_sockopt(ztk, ZMQ_SNDTIMEO, &v.i, sizeof(v.i));
+			s_ztk_configure_sockopt(ztk, ZMQ_RCVTIMEO, &v.i, sizeof(v.i));
+			ztk->poll.timeout = v.i;
+
 		case '\020': /* --input-delimiter */
 			ztk->input_delim = optarg[0];
 			break;
@@ -325,12 +339,13 @@ int ztk_connect(ZTK *ztk, ztk_peer_t *e, int type)
 	return 0;
 }
 
-int ztk_poll(ZTK *ztk, long timeout)
+int ztk_poll(ZTK *ztk)
 {
 	if (!ztk->poll.items) {
 		int n = list_len(&ztk->peers);
-		ztk->poll.items = vcalloc(n, sizeof(zmq_pollitem_t));
-		ztk->poll.n     = n;
+		ztk->poll.items   = vcalloc(n, sizeof(zmq_pollitem_t));
+		ztk->poll.n       = n;
+		ztk->poll.timeout = -1;
 
 		ztk_peer_t *e;
 		for_each_peer(e, ztk) {
@@ -344,7 +359,7 @@ int ztk_poll(ZTK *ztk, long timeout)
 		}
 	}
 
-	return zmq_poll(ztk->poll.items, ztk->poll.n, timeout);
+	return zmq_poll(ztk->poll.items, ztk->poll.n, ztk->poll.timeout);
 }
 
 ztk_peer_t *ztk_next(ZTK *ztk, int events)

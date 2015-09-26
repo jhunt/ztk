@@ -46,6 +46,7 @@ typedef struct {
 	struct {
 		zmq_pollitem_t *items;
 		int             n;
+		long            timeout;
 	} poll;
 } ZTK;
 
@@ -72,7 +73,7 @@ int ztk_shutdown(ZTK *cfg);
 int ztk_sockets(ZTK *cfg, int type);
 int ztk_bind(ZTK *cfg, ztk_peer_t *e, int type);
 int ztk_connect(ZTK *cfg, ztk_peer_t *e, int type);
-int ztk_poll(ZTK *cfg, long timeout);
+int ztk_poll(ZTK *cfg);
 ztk_peer_t *ztk_next(ZTK *cfg, int events);
 pdu_t *ztk_reply(ZTK *cfg, pdu_t *pdu, FILE *io);
 pdu_t *ztk_pdu(ZTK *cfg, FILE *io);

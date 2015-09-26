@@ -7,10 +7,18 @@ yes PUBLISH | ./ztk pub --bind ${ENDPOINT} &
 PUB_PID=$!
 
 # try to consume from our publisher (incorrectly) with
-# a dealer.  after 1s, it should timeout and exit
-./ztk dealer --connect ${ENDPOINT} --recv-timeout 1000 > ${DATAFILE}
+# a dealer.  after 120ms, it should timeout and exit
+./ztk dealer --connect ${ENDPOINT} --timeout 120 > ${DATAFILE}
+file_is_empty ${DATAFILE}
 
-line_ok ${DATAFILE} 1 ""
+# let's try it with no one bound to the socket
+kill -TERM $PUB_PID
+echo "DEAL" | ./ztk dealer --connect ${ENDPOINT} --timeout 120 > ${DATAFILE}
+file_is_empty ${DATAFILE}
+
+# how about a push?
+echo "PUSH" | ./ztk push --connect ${ENDPOINT} --timeout 120 > ${DATAFILE}
+file_is_empty ${DATAFILE}
 
 exit 0
 # vim:ft=sh

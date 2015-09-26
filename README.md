@@ -73,11 +73,10 @@ black box application:
     exit 0
 
 **NOTE:** When using ztk in this manner, it is _vital_ that you
-make use of the `--recv-timeout` and `--send-timeout` options,
-which set the `ZMQ_RCVTIMEO` and `ZMQ_SNDTIMEO` socket options.
-This way, if the application being tested is misbehaving, your ztk
-client won't hang indefinitely waiting for a reply that may never
-come.
+make use of `--timeout`, which sets a bunch of internal timeouts
+(poll / send / receive / linger).  This way, if the application
+being tested is misbehaving, your ztk client won't hang
+indefinitely waiting for a reply that may never come.
 
 Copyright
 ---------

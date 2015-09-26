@@ -4,6 +4,21 @@ DATADIR=$(mktemp -d)
 DATAFILE=${DATADIR}/data
 trap 'rm -rf ${DATADIR}' EXIT TERM QUIT
 
+file_is_empty() {
+	file=$1
+	msg=${2:-$(basename ${file}) should be empty}
+	if [[ -f ${file} && -s ${file} ]]; then
+		echo >&2 "${msg}: FAILED"
+		echo >&2 "   file was not empty.  it contained:"
+		echo >&2 "   -----------------------------------------------"
+		cat ${file} | sed -e 's/^/   /'
+		echo >&2 "   -----------------------------------------------"
+		echo >&2
+		echo FAIL
+		exit 1
+	fi
+}
+
 line_ok() {
 	file=$1
 	line=$2

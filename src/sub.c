@@ -35,7 +35,7 @@ int ztk_sub(int argc, char **argv)
 	/* recv */
 	signal_handlers();
 	while (!signalled()) {
-		if (ztk_poll(ztk, -1) < 0)
+		if (ztk_poll(ztk) < 0)
 			continue;
 
 		ztk_peer_t *e;
