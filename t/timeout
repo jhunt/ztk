@@ -20,5 +20,9 @@ file_is_empty ${DATAFILE}
 echo "PUSH" | ./ztk push --connect ${ENDPOINT} --timeout 120 > ${DATAFILE}
 file_is_empty ${DATAFILE}
 
+# same thing, just setting --linger
+echo "PUSH" | ./ztk push --connect ${ENDPOINT} --linger 120 > ${DATAFILE}
+file_is_empty ${DATAFILE}
+
 exit 0
 # vim:ft=sh
