@@ -252,6 +252,7 @@ ZTK* ztk_configure(int argc, char **argv)
 			s_ztk_configure_sockopt(ztk, ZMQ_SNDTIMEO, &v.i, sizeof(v.i));
 			s_ztk_configure_sockopt(ztk, ZMQ_RCVTIMEO, &v.i, sizeof(v.i));
 			ztk->poll.timeout = v.i;
+			break;
 
 		case '\020': /* --input-delimiter */
 			ztk->input_delim = optarg[0];
