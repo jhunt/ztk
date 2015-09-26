@@ -1,0 +1,16 @@
+#!./t/run
+
+mkdir ${DATADIR}/bin
+
+ln -s ${PWD}/ztk ${DATADIR}/bin/zpull
+ln -s ${PWD}/ztk ${DATADIR}/bin/zomg
+
+string_is "$(./ztk zomg 2>&1 >/dev/null)" \
+          "unrecognized command 'zomg' (try \`ztk (pub|sub|push|pull|req|rep|dealer|router) ...')" \
+          "output from improper command invocation"
+
+string_is "$(${DATADIR}/bin/zomg 2>&1 >/dev/null)" \
+          "unrecognized command 'zomg' (try \`ztk (pub|sub|push|pull|req|rep|dealer|router) ...')" \
+          "output from improper symlinkage"
+
+exit 0

@@ -43,23 +43,25 @@ int main(int argc, char **argv)
 {
 	int i;
 	char *argv0 = strdup(argv[0]);
-	char *bin = basename(argv0);
+	char *cmd = basename(argv0);
 
 	for (i = 0; COMMANDS[i].name; i++) {
-		if (strcmp(bin, COMMANDS[i].prog) == 0) {
+		if (strcmp(cmd, COMMANDS[i].prog) == 0) {
 			return (*COMMANDS[i].main)(argc, argv);
 		}
 	}
 
 	if (argc > 1) {
+		cmd = argv[1];
 		for (i = 0; COMMANDS[i].name; i++) {
-			if (strcmp(argv[1], COMMANDS[i].name) == 0) {
+			if (strcmp(cmd, COMMANDS[i].name) == 0) {
 				argv[1] = argv[0];
 				return (*COMMANDS[i].main)(argc - 1, argv + 1);
 			}
 		}
 	}
 
-	fprintf(stderr, "unrecognized command (try `%s (pub|sub|push|pull) [options]')\n", argv[0]);
+	fprintf(stderr, "unrecognized command '%s' "
+	                "(try `ztk (pub|sub|push|pull|req|rep|dealer|router) ...')\n", cmd);
 	return 1;
 }

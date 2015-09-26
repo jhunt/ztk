@@ -4,6 +4,21 @@ DATADIR=$(mktemp -d)
 DATAFILE=${DATADIR}/data
 trap 'rm -rf ${DATADIR}' EXIT TERM QUIT
 
+string_is() {
+	got=$1
+	expect=$2
+	msg=${2:-strings should match}
+
+	if [[ "${got}" != "${expect}" ]]; then
+		echo >&2 "${msg}: FAILED"
+		echo >&2 "  expected: '${expect}'"
+		echo >&2 "       got: '${got}'"
+		echo >&2
+		echo FAIL
+		exit 1
+	fi
+}
+
 file_is_empty() {
 	file=$1
 	msg=${2:-$(basename ${file}) should be empty}

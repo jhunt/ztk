@@ -1,0 +1,15 @@
+#!./t/run
+
+ENDPOINT="ipc://${DATADIR}/delim.1"
+yes 'REPLY+SOUNDS+GOOD' | ./ztk rep --delimiter '+' --bind ${ENDPOINT} > ${DATAFILE}.rep &
+REP_PID=$!
+
+echo 'QUESTION-that ok|not?' | ./ztk req --connect ${ENDPOINT} \
+	--input-delimiter - --output-delimiter ^ > ${DATAFILE}.req
+kill -TERM ${REP_PID}
+
+line_ok ${DATAFILE}.rep 1 "QUESTION+that ok|not?"
+line_ok ${DATAFILE}.req 1 "REPLY^SOUNDS^GOOD"
+
+exit 0
+# vim:ft=sh

@@ -1,19 +1,13 @@
 #!./t/run
 
-for CMD in push pull pub sub; do
-	E=$(./ztk $CMD 2>&1 >/dev/null)
-	if [[ "$E" != "./ztk: you must specify either --bind or --connect option(s)" ]]; then
-		echo >&2 "$CMD: bad error when neither --bind nor --connect specified; error was: ($E)"
-		echo FAIL
-		exit 1
-	fi
+for CMD in push pull pub sub req rep dealer router; do
+	string_is "$(./ztk $CMD 2>&1 >/dev/null)" \
+	          "./ztk: you must specify either --bind or --connect option(s)" \
+	          "errors when not given --bind or --connect"
 
-	E=$(./ztk $CMD --bind IGNORED --connect IGNORED 2>&1 >/dev/null)
-	if [[ "$E" != "./ztk: you must specify either --bind or --connect option(s)" ]]; then
-		echo >&2 "$CMD: bad error when specifying both --bind and --connect; error was: ($E)"
-		echo FAIL
-		exit 1
-	fi
+	string_is "$(./ztk $CMD --bind IGNORED --connect IGNORED 2>&1 >/dev/null)" \
+	          "./ztk: you must specify either --bind or --connect option(s)" \
+	          "errors when given both --bind and --connect"
 done
 
 exit 0
