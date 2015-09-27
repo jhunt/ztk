@@ -28,6 +28,7 @@ CORE_SRC += src/push.c src/pull.c
 CORE_SRC += src/pub.c src/sub.c
 CORE_SRC += src/req.c src/rep.c
 CORE_SRC += src/dealer.c src/router.c
+CORE_SRC += src/tap.c
 
 ############################################################
 
@@ -38,6 +39,7 @@ ztk_SOURCES = $(CORE_SRC) src/main.c
 
 check_SCRIPTS = t/arg-validation t/invoke t/timeout t/delim \
                 t/pipeline t/pubsub t/reqrep t/drouter \
+                t/tap.pub-sub t/tap.pull-push t/tap.push-pull t/tap.sub-pub \
                 t/debug
 TESTS = $(check_SCRIPTS)
 
@@ -52,6 +54,7 @@ install-exec-hook:
 	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zrep$(EXEEXT)
 	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zdealer$(EXEEXT)
 	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/zrouter$(EXEEXT)
+	$(LN_S) -f $(DESTDIR)$(bindir)/ztk$(EXEEXT) $(DESTDIR)$(bindir)/ztap$(EXEEXT)
 
 ############################################################
 

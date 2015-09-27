@@ -1,0 +1,28 @@
+#!./t/run
+
+REAL_ENDPOINT="ipc://${DATADIR}/real"
+FAKE_ENDPOINT="ipc://${DATADIR}/fake"
+
+./ztk sub --bind ${REAL_ENDPOINT} > ${DATAFILE}.out &
+SUB_PID=$!
+
+./ztk tap sub-pub --bind ${FAKE_ENDPOINT} --connect ${REAL_ENDPOINT} > ${DATAFILE}.tap &
+TAP_PID=$!
+
+NOW=$(date +%s | sed -e 's/..$/xx.xxx/')
+sleepcat <<EOF | ./ztk pub --connect ${FAKE_ENDPOINT} > ${DATAFILE}.pub &
+CONNECTED
+EOF
+
+sleep 1.5
+kill -TERM ${TAP_PID}
+kill -TERM ${SUB_PID}
+
+line_ok ${DATAFILE}.out 1 "CONNECTED"
+
+sed -i'' -e 's/[0-9][0-9]\.[0-9][0-9][0-9])/xx.xxx)/' ${DATAFILE}.tap
+line_ok ${DATAFILE}.tap  1 "<( $NOW)  1:[ CONNECTED ]"
+line_ok ${DATAFILE}.tap  2 " ( $NOW)> 1:[ CONNECTED ]"
+
+exit 0
+# vim:ft=sh

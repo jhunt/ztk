@@ -1,0 +1,48 @@
+#!./t/run
+
+REAL_ENDPOINT="ipc://${DATADIR}/real"
+FAKE_ENDPOINT="ipc://${DATADIR}/fake"
+
+NOW=$(date +%s | sed -e 's/..$/xx.xxx/')
+sleepcat <<EOF | ./ztk pub --bind ${REAL_ENDPOINT} > ${DATAFILE}.pub &
+BEACON
+BEACON
+BEACON
+SYNC|123456789
+BEACON
+BEACON
+EOF
+
+./ztk tap pub-sub --bind ${FAKE_ENDPOINT} --connect ${REAL_ENDPOINT} > ${DATAFILE}.tap &
+TAP_PID=$!
+
+./ztk sub --connect ${FAKE_ENDPOINT} > ${DATAFILE}.out &
+SUB_PID=$!
+
+sleep 1.5
+kill -TERM ${TAP_PID}
+kill -TERM ${SUB_PID}
+
+line_ok ${DATAFILE}.out 1 "BEACON"
+line_ok ${DATAFILE}.out 2 "BEACON"
+line_ok ${DATAFILE}.out 3 "BEACON"
+line_ok ${DATAFILE}.out 4 "SYNC|123456789"
+line_ok ${DATAFILE}.out 5 "BEACON"
+line_ok ${DATAFILE}.out 6 "BEACON"
+
+sed -i'' -e 's/[0-9][0-9]\.[0-9][0-9][0-9])/xx.xxx)/' ${DATAFILE}.tap
+line_ok ${DATAFILE}.tap  1 "<( $NOW)  1:[ BEACON ]"
+line_ok ${DATAFILE}.tap  2 " ( $NOW)> 1:[ BEACON ]"
+line_ok ${DATAFILE}.tap  3 "<( $NOW)  1:[ BEACON ]"
+line_ok ${DATAFILE}.tap  4 " ( $NOW)> 1:[ BEACON ]"
+line_ok ${DATAFILE}.tap  5 "<( $NOW)  1:[ BEACON ]"
+line_ok ${DATAFILE}.tap  6 " ( $NOW)> 1:[ BEACON ]"
+line_ok ${DATAFILE}.tap  7 "<( $NOW)  2:[ SYNC | 123456789 ]"
+line_ok ${DATAFILE}.tap  8 " ( $NOW)> 2:[ SYNC | 123456789 ]"
+line_ok ${DATAFILE}.tap  9 "<( $NOW)  1:[ BEACON ]"
+line_ok ${DATAFILE}.tap 10 " ( $NOW)> 1:[ BEACON ]"
+line_ok ${DATAFILE}.tap 11 "<( $NOW)  1:[ BEACON ]"
+line_ok ${DATAFILE}.tap 12 " ( $NOW)> 1:[ BEACON ]"
+
+exit 0
+# vim:ft=sh

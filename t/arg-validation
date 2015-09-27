@@ -10,5 +10,9 @@ for CMD in push pull pub sub req rep dealer router; do
 	          "errors when given both --bind and --connect"
 done
 
+string_is "$(./ztk tap 2>&1 >/dev/null)" \
+          "./ztk: you must specify an architecture (pub-sub, pull-push, etc.)" \
+          "errors when not given an architecture"
+
 exit 0
 # vim:ft=sh

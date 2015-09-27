@@ -1,0 +1,33 @@
+#!./t/run
+
+REAL_ENDPOINT="ipc://${DATADIR}/real"
+FAKE_ENDPOINT="ipc://${DATADIR}/fake"
+./ztk pull --connect ${FAKE_ENDPOINT} > ${DATAFILE}.out &
+SINK_PID=$!
+
+./ztk tap push-pull --bind ${FAKE_ENDPOINT} --connect ${REAL_ENDPOINT} > ${DATAFILE}.tap &
+TAP_PID=$!
+
+NOW=$(date +%s | sed -e 's/..$/xx.xxx/')
+sleepcat <<EOF | ./ztk push --timeout 100 --bind ${REAL_ENDPOINT}
+WORK|job-112441|do-stuff
+WORK|job-112442|do-other-stuff
+RELOAD
+EOF
+kill -TERM ${TAP_PID}
+kill -TERM ${SINK_PID}
+
+line_ok ${DATAFILE}.out 1 "WORK|job-112441|do-stuff"
+line_ok ${DATAFILE}.out 2 "WORK|job-112442|do-other-stuff"
+line_ok ${DATAFILE}.out 3 "RELOAD"
+
+sed -i'' -e 's/[0-9][0-9]\.[0-9][0-9][0-9])/xx.xxx)/' ${DATAFILE}.tap
+line_ok ${DATAFILE}.tap 1 "<( $NOW)  3:[ WORK | job-112441 | do-stuff ]"
+line_ok ${DATAFILE}.tap 2 " ( $NOW)> 3:[ WORK | job-112441 | do-stuff ]"
+line_ok ${DATAFILE}.tap 3 "<( $NOW)  3:[ WORK | job-112442 | do-other-stuff ]"
+line_ok ${DATAFILE}.tap 4 " ( $NOW)> 3:[ WORK | job-112442 | do-other-stuff ]"
+line_ok ${DATAFILE}.tap 5 "<( $NOW)  1:[ RELOAD ]"
+line_ok ${DATAFILE}.tap 6 " ( $NOW)> 1:[ RELOAD ]"
+
+exit 0
+# vim:ft=sh

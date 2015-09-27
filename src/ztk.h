@@ -41,6 +41,9 @@ typedef struct {
 	char   *program;
 	int     verbose;
 
+	int     argc;
+	char  **argv;
+
 	uint8_t input;
 	char    input_delim;
 
@@ -95,5 +98,6 @@ int ztk_req(int argc, char **argv);
 int ztk_rep(int argc, char **argv);
 int ztk_dealer(int argc, char **argv);
 int ztk_router(int argc, char **argv);
+int ztk_tap(int argc, char **argv);
 
 #endif

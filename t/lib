@@ -4,6 +4,11 @@ DATADIR=$(mktemp -d)
 DATAFILE=${DATADIR}/data
 trap 'rm -rf ${DATADIR}' EXIT TERM QUIT
 
+sleepcat() {
+	sleep ${1:-1}
+	cat
+}
+
 string_is() {
 	got=$1
 	expect=$2

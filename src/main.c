@@ -36,6 +36,7 @@ static struct {
 	{ "zrep",    "rep",     ztk_rep    },
 	{ "zdealer", "dealer",  ztk_dealer },
 	{ "zrouter", "router",  ztk_router },
+	{ "ztap",    "tap",     ztk_tap    },
 	{ NULL, NULL, NULL },
 };
 

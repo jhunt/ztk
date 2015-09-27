@@ -1,2 +1,2 @@
 #!/bin/bash
-timeout 5 /bin/bash -s <<<'source t/lib; source $1' $@
+timeout 30 /bin/bash -s <<<'source t/lib; source $1' $@

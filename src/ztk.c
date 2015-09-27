@@ -61,6 +61,7 @@ ZTK* ztk_configure(const char *program, int argc, char **argv)
 
 	ztk->input_delim = ztk->output_delim = '|';
 	ztk->input = ztk->output = FORMAT_DELIM;
+	ztk->poll.timeout = -1;
 
 	struct option long_opts[] = {
 		{ "help",                   no_argument, NULL,    'h' },
@@ -267,6 +268,9 @@ ZTK* ztk_configure(const char *program, int argc, char **argv)
 		}
 	}
 
+	ztk->argc = argc - optind;
+	ztk->argv = argv + optind;
+
 	return ztk;
 }
 
@@ -354,13 +358,13 @@ int ztk_sockets(ZTK *ztk, int type)
 	ztk_peer_t *e;
 	for_each_bind(e, ztk) {
 		if (ztk_bind(ztk, e, type) != 0) {
-			fprintf(stderr, "bind of %s failed :%s\n", e->address, zmq_strerror(errno));
+			fprintf(stderr, "bind of %s failed: %s\n", e->address, zmq_strerror(errno));
 			return -1;
 		}
 	}
 	for_each_connect(e, ztk) {
 		if (ztk_connect(ztk, e, type) != 0) {
-			fprintf(stderr, "connect of %s failed :%s\n", e->address, zmq_strerror(errno));
+			fprintf(stderr, "connect of %s failed: %s\n", e->address, zmq_strerror(errno));
 			return -1;
 		}
 	}
@@ -388,7 +392,7 @@ void s_set_sockopts(ZTK *ztk, ztk_peer_t *e, int type, int after)
 	}
 
 	if (type == ZMQ_SUB && !subd && after) {
-		ztk_debugf(ztk, "setting option %s (%#02x)\n", ZMQ_SUBSCRIBE);
+		ztk_debugf(ztk, "setting option %s (%#02x)\n", s_sockoptname(ZMQ_SUBSCRIBE), ZMQ_SUBSCRIBE);
 		zmq_setsockopt(e->socket, ZMQ_SUBSCRIBE, "", 0);
 	}
 }
@@ -402,7 +406,12 @@ int ztk_bind(ZTK *ztk, ztk_peer_t *e, int type)
 
 	e->socket = zmq_socket(ztk->zmq, type);
 	s_set_sockopts(ztk, e, type, 0);
-	return zmq_bind(e->socket, e->address);
+
+	int rc = zmq_bind(e->socket, e->address);
+	if (rc != 0) return rc;
+
+	s_set_sockopts(ztk, e, type, 1);
+	return 0;
 }
 
 int ztk_connect(ZTK *ztk, ztk_peer_t *e, int type)
@@ -431,7 +440,6 @@ int ztk_poll(ZTK *ztk)
 		ztk_debugf(ztk, "  found %i sockets to poll\n", n);
 		ztk->poll.items   = vcalloc(n, sizeof(zmq_pollitem_t));
 		ztk->poll.n       = n;
-		ztk->poll.timeout = -1;
 
 		ztk_peer_t *e;
 		for_each_peer(e, ztk) {
