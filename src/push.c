@@ -21,7 +21,7 @@
 
 int ztk_push(int argc, char **argv)
 {
-	ZTK *ztk = ztk_configure(argc, argv);
+	ZTK *ztk = ztk_configure("push", argc, argv);
 
 	if (( list_isempty(&ztk->binds) &&  list_isempty(&ztk->connects))
 	 || (!list_isempty(&ztk->binds) && !list_isempty(&ztk->connects))) {

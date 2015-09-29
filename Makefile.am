@@ -37,7 +37,8 @@ ztk_SOURCES = $(CORE_SRC) src/main.c
 ############################################################
 
 check_SCRIPTS = t/arg-validation t/invoke t/timeout t/delim \
-                t/pipeline t/pubsub t/reqrep t/drouter
+                t/pipeline t/pubsub t/reqrep t/drouter \
+                t/debug
 TESTS = $(check_SCRIPTS)
 
 ############################################################

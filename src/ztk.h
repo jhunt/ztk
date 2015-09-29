@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdarg.h>
 #include <sys/types.h>
 #include <vigor.h>
 
@@ -36,6 +37,9 @@ typedef struct {
 	list_t  binds;
 	list_t  connects;
 	list_t  peers;
+
+	char   *program;
+	int     verbose;
 
 	uint8_t input;
 	char    input_delim;
@@ -60,6 +64,8 @@ typedef struct {
 typedef struct {
 	char    *address;
 	void    *socket;
+	int      type;
+	int      bound;
 	list_t   l;
 	list_t   all;
 } ztk_peer_t;
@@ -68,7 +74,7 @@ typedef struct {
 #define for_each_bind(e, ztk)     for_each_object((e), &((ztk)->binds), l)
 #define for_each_connect(e, ztk)  for_each_object((e), &((ztk)->connects), l)
 
-ZTK* ztk_configure(int argc, char **argv);
+ZTK* ztk_configure(const char *program, int argc, char **argv);
 int ztk_shutdown(ZTK *cfg);
 int ztk_sockets(ZTK *cfg, int type);
 int ztk_bind(ZTK *cfg, ztk_peer_t *e, int type);
@@ -78,6 +84,8 @@ ztk_peer_t *ztk_next(ZTK *cfg, int events);
 pdu_t *ztk_reply(ZTK *cfg, pdu_t *pdu, FILE *io);
 pdu_t *ztk_pdu(ZTK *cfg, FILE *io);
 void ztk_print(ZTK *cfg, pdu_t *pdu, FILE *io);
+void ztk_debugf(ZTK *cfg, const char *fmt, ...);
+void ztk_vdebugf(ZTK *cfg, const char *fmt, va_list ap);
 
 int ztk_push(int argc, char **argv);
 int ztk_pull(int argc, char **argv);

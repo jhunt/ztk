@@ -21,7 +21,7 @@
 
 int ztk_dealer(int argc, char **argv)
 {
-	ZTK *ztk = ztk_configure(argc, argv);
+	ZTK *ztk = ztk_configure("dealer", argc, argv);
 
 	if (( list_isempty(&ztk->binds) &&  list_isempty(&ztk->connects))
 	 || (!list_isempty(&ztk->binds) && !list_isempty(&ztk->connects))) {

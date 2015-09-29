@@ -47,9 +47,10 @@ static void s_ztk_configure_sockopt(ZTK *ztk, int name, const void *data, size_t
 	list_push(&ztk->sockopts, &o->l);
 }
 
-ZTK* ztk_configure(int argc, char **argv)
+ZTK* ztk_configure(const char *program, int argc, char **argv)
 {
 	ZTK *ztk = vmalloc(sizeof(ZTK));
+	ztk->program = strdup(program);
 
 	list_init(&ztk->peers);
 	list_init(&ztk->binds);
@@ -117,9 +118,11 @@ ZTK* ztk_configure(int argc, char **argv)
 			break;
 
 		case 'v': /* --verbose */
+			ztk->verbose = 1;
 			break;
 
 		case 'q': /* --quiet */
+			ztk->verbose = 0;
 			break;
 
 		case 'i': /* --input */
@@ -267,12 +270,81 @@ ZTK* ztk_configure(int argc, char **argv)
 	return ztk;
 }
 
+static const char *s_socktype(int type)
+{
+	switch (type) {
+	case ZMQ_PUB:    return "PUB";
+	case ZMQ_SUB:    return "SUB";
+	case ZMQ_PUSH:   return "PUSH";
+	case ZMQ_PULL:   return "PULL";
+	case ZMQ_REQ:    return "REQ";
+	case ZMQ_REP:    return "REP";
+	case ZMQ_DEALER: return "DEALER";
+	case ZMQ_ROUTER: return "ROUTER";
+	default:         return "(UNKNOWN)";
+	}
+}
+
+static const char *s_sockoptname(int opt)
+{
+	switch (opt) {
+	case  ZMQ_SNDHWM:               return  "ZMQ_SNDHWM";
+	case  ZMQ_RCVHWM:               return  "ZMQ_RCVHWM";
+	case  ZMQ_AFFINITY:             return  "ZMQ_AFFINITY";
+	case  ZMQ_SUBSCRIBE:            return  "ZMQ_SUBSCRIBE";
+	case  ZMQ_UNSUBSCRIBE:          return  "ZMQ_UNSUBSCRIBE";
+	case  ZMQ_IDENTITY:             return  "ZMQ_IDENTITY";
+	case  ZMQ_RATE:                 return  "ZMQ_RATE";
+	case  ZMQ_RECOVERY_IVL:         return  "ZMQ_RECOVERY_IVL";
+	case  ZMQ_SNDBUF:               return  "ZMQ_SNDBUF";
+	case  ZMQ_RCVBUF:               return  "ZMQ_RCVBUF";
+	case  ZMQ_LINGER:               return  "ZMQ_LINGER";
+	case  ZMQ_RECONNECT_IVL:        return  "ZMQ_RECONNECT_IVL";
+	case  ZMQ_RECONNECT_IVL_MAX:    return  "ZMQ_RECONNECT_IVL_MAX";
+	case  ZMQ_BACKLOG:              return  "ZMQ_BACKLOG";
+	case  ZMQ_MAXMSGSIZE:           return  "ZMQ_MAXMSGSIZE";
+	case  ZMQ_MULTICAST_HOPS:       return  "ZMQ_MULTICAST_HOPS";
+	case  ZMQ_RCVTIMEO:             return  "ZMQ_RCVTIMEO";
+	case  ZMQ_SNDTIMEO:             return  "ZMQ_SNDTIMEO";
+	case  ZMQ_IPV6:                 return  "ZMQ_IPV6";
+	case  ZMQ_IPV4ONLY:             return  "ZMQ_IPV4ONLY";
+	case  ZMQ_IMMEDIATE:            return  "ZMQ_IMMEDIATE";
+	case  ZMQ_ROUTER_MANDATORY:     return  "ZMQ_ROUTER_MANDATORY";
+	case  ZMQ_ROUTER_RAW:           return  "ZMQ_ROUTER_RAW";
+	case  ZMQ_PROBE_ROUTER:         return  "ZMQ_PROBE_ROUTER";
+	case  ZMQ_XPUB_VERBOSE:         return  "ZMQ_XPUB_VERBOSE";
+	case  ZMQ_REQ_CORRELATE:        return  "ZMQ_REQ_CORRELATE";
+	case  ZMQ_REQ_RELAXED:          return  "ZMQ_REQ_RELAXED";
+	case  ZMQ_TCP_KEEPALIVE:        return  "ZMQ_TCP_KEEPALIVE";
+	case  ZMQ_TCP_KEEPALIVE_IDLE:   return  "ZMQ_TCP_KEEPALIVE_IDLE";
+	case  ZMQ_TCP_KEEPALIVE_CNT:    return  "ZMQ_TCP_KEEPALIVE_CNT";
+	case  ZMQ_TCP_KEEPALIVE_INTVL:  return  "ZMQ_TCP_KEEPALIVE_INTVL";
+	case  ZMQ_TCP_ACCEPT_FILTER:    return  "ZMQ_TCP_ACCEPT_FILTER";
+	case  ZMQ_PLAIN_SERVER:         return  "ZMQ_PLAIN_SERVER";
+	case  ZMQ_PLAIN_USERNAME:       return  "ZMQ_PLAIN_USERNAME";
+	case  ZMQ_PLAIN_PASSWORD:       return  "ZMQ_PLAIN_PASSWORD";
+	case  ZMQ_CURVE_SERVER:         return  "ZMQ_CURVE_SERVER";
+	case  ZMQ_CURVE_PUBLICKEY:      return  "ZMQ_CURVE_PUBLICKEY";
+	case  ZMQ_CURVE_SECRETKEY:      return  "ZMQ_CURVE_SECRETKEY";
+	case  ZMQ_CURVE_SERVERKEY:      return  "ZMQ_CURVE_SERVERKEY";
+	case  ZMQ_ZAP_DOMAIN:           return  "ZMQ_ZAP_DOMAIN";
+	case  ZMQ_CONFLATE:             return  "ZMQ_CONFLATE";
+	default: return "(UNKNOWN)";
+	}
+}
+
 int ztk_shutdown(ZTK *ztk)
 {
+	ztk_debugf(ztk, "shutting down\n");
+
 	ztk_peer_t *e;
 	for_each_peer(e, ztk) {
+		ztk_debugf(ztk, "  closing %s socket %s to %s\n", s_socktype(e->type),
+				(e->bound ? "bound" : "connected"), e->address);
 		zmq_close(e->socket);
 	}
+
+	ztk_debugf(ztk, "  destroying 0MQ context\n");
 	zmq_ctx_destroy(ztk->zmq);
 	return 0;
 }
@@ -311,18 +383,23 @@ void s_set_sockopts(ZTK *ztk, ztk_peer_t *e, int type, int after)
 		if (opt->name == ZMQ_SUBSCRIBE)
 			subd = 1;
 
-		//fprintf(stderr, ">> setting %02x option\n", opt->name);
+		ztk_debugf(ztk, "setting option %s (%#02x)\n", s_sockoptname(opt->name), opt->name);
 		zmq_setsockopt(e->socket, opt->name, opt->value, opt->len);
 	}
 
 	if (type == ZMQ_SUB && !subd && after) {
-		//fprintf(stderr, ">> setting catch-all ZMQ_SUBSCRIBE ('')\n");
+		ztk_debugf(ztk, "setting option %s (%#02x)\n", ZMQ_SUBSCRIBE);
 		zmq_setsockopt(e->socket, ZMQ_SUBSCRIBE, "", 0);
 	}
 }
 
 int ztk_bind(ZTK *ztk, ztk_peer_t *e, int type)
 {
+	e->type = type;
+	e->bound = 1;
+
+	ztk_debugf(ztk, "binding a %s socket to %s\n", s_socktype(type), e->address);
+
 	e->socket = zmq_socket(ztk->zmq, type);
 	s_set_sockopts(ztk, e, type, 0);
 	return zmq_bind(e->socket, e->address);
@@ -330,6 +407,11 @@ int ztk_bind(ZTK *ztk, ztk_peer_t *e, int type)
 
 int ztk_connect(ZTK *ztk, ztk_peer_t *e, int type)
 {
+	e->type = type;
+	e->bound = 0;
+
+	ztk_debugf(ztk, "connecting a %s socket to %s\n", s_socktype(type), e->address);
+
 	e->socket = zmq_socket(ztk->zmq, type);
 	s_set_sockopts(ztk, e, type, 0);
 
@@ -343,13 +425,18 @@ int ztk_connect(ZTK *ztk, ztk_peer_t *e, int type)
 int ztk_poll(ZTK *ztk)
 {
 	if (!ztk->poll.items) {
+		ztk_debugf(ztk, "first call to ztk_poll() - setting up 0MQ poller items\n");
+
 		int n = list_len(&ztk->peers);
+		ztk_debugf(ztk, "  found %i sockets to poll\n", n);
 		ztk->poll.items   = vcalloc(n, sizeof(zmq_pollitem_t));
 		ztk->poll.n       = n;
 		ztk->poll.timeout = -1;
 
 		ztk_peer_t *e;
 		for_each_peer(e, ztk) {
+			ztk_debugf(ztk, "  registering peer %s socket %s to %s\n", s_socktype(e->type),
+					e->bound ? "bound" : "connected", e->address);
 			n--;
 			if (n < 0)
 				return -1;
@@ -360,6 +447,8 @@ int ztk_poll(ZTK *ztk)
 		}
 	}
 
+	ztk_debugf(ztk, "polling %i sockets for %is%s\n", ztk->poll.n, ztk->poll.timeout,
+			ztk->poll.timeout < 0 ? " (indefinitely)" : "");
 	return zmq_poll(ztk->poll.items, ztk->poll.n, ztk->poll.timeout);
 }
 
@@ -428,4 +517,24 @@ void ztk_print(ZTK *ztk, pdu_t *pdu, FILE *io)
 	}
 	fprintf(io, "\n");
 	fflush(io);
+}
+
+void ztk_debugf(ZTK *cfg, const char *fmt, ...)
+{
+	if (!cfg->verbose)
+		return;
+
+	va_list ap;
+	va_start(ap, fmt);
+	ztk_vdebugf(cfg, fmt, ap);
+	va_end(ap);
+}
+
+void ztk_vdebugf(ZTK *cfg, const char *fmt, va_list ap)
+{
+	if (!cfg->verbose)
+		return;
+
+	fprintf(stderr, "%s> ", cfg->program);
+	vfprintf(stderr, fmt, ap);
 }

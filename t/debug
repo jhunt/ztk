@@ -1,0 +1,23 @@
+#!./t/run
+
+ENDPOINT="ipc://${DATADIR}/debug.3"
+./ztk pull -v --bind ${ENDPOINT} 2> ${DATAFILE} >/dev/null &
+PULL_PID=$!
+
+sleep 1
+echo "PDU" | ./ztk push --connect ${ENDPOINT}
+kill -TERM ${PULL_PID}
+
+line_ok ${DATAFILE} 1 "pull> binding a PULL socket to ${ENDPOINT}"
+line_ok ${DATAFILE} 2 "pull> first call to ztk_poll() - setting up 0MQ poller items"
+line_ok ${DATAFILE} 3 "pull>   found 1 sockets to poll"
+line_ok ${DATAFILE} 4 "pull>   registering peer PULL socket bound to ${ENDPOINT}"
+line_ok ${DATAFILE} 5 "pull> polling 1 sockets for -1s (indefinitely)"
+line_ok ${DATAFILE} 6 "pull> polling 1 sockets for -1s (indefinitely)"
+line_ok ${DATAFILE} 7 "pull> shutting down"
+line_ok ${DATAFILE} 8 "pull>   closing PULL socket bound to ${ENDPOINT}"
+line_ok ${DATAFILE} 9 "pull>   destroying 0MQ context"
+
+
+exit 0
+# vim:ft=sh
