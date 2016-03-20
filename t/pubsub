@@ -30,5 +30,34 @@ line_ok ${DATAFILE}.2 1 "AA.TOPIC|payload"
 line_ok ${DATAFILE}.2 2 "EE.TOPIC|payload"
 line_ok ${DATAFILE}.2 3 ""
 
+
+ENDPOINT="ipc://${DATADIR}/pubsub.3"
+ZTK_SUBSCRIBE='AA|E' ./ztk sub --connect ${ENDPOINT} > ${DATAFILE}.3 &
+SUB_PID=$!
+(sleep 1
+ for L in {A,B,C,D,E,F,G,H}; do
+   echo "${L}${L}.TOPIC|payload"
+  done) | ./ztk pub --bind ${ENDPOINT}
+kill -TERM ${SUB_PID}
+
+line_ok ${DATAFILE}.3 1 "AA.TOPIC|payload"
+line_ok ${DATAFILE}.3 2 "EE.TOPIC|payload"
+line_ok ${DATAFILE}.3 3 ""
+
+
+ENDPOINT="ipc://${DATADIR}/pubsub.4"
+# test some ... degenerate cases
+ZTK_SUBSCRIBE='||AA|E|EE|' ./ztk sub --connect ${ENDPOINT} > ${DATAFILE}.4 &
+SUB_PID=$!
+(sleep 1
+ for L in {A,B,C,D,E,F,G,H}; do
+   echo "${L}${L}.TOPIC|payload"
+  done) | ./ztk pub --bind ${ENDPOINT}
+kill -TERM ${SUB_PID}
+
+line_ok ${DATAFILE}.4 1 "AA.TOPIC|payload"
+line_ok ${DATAFILE}.4 2 "EE.TOPIC|payload"
+line_ok ${DATAFILE}.4 3 ""
+
 exit 0
 # vim:ft=sh

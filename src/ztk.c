@@ -142,6 +142,52 @@ ZTK* ztk_configure(const char *program, int argc, char **argv)
 	ztk->input = ztk->output = FORMAT_DELIM;
 	ztk->poll.timeout = -1;
 
+	char *env;
+	/* setup default delimiters */
+	if ((env = getenv("ZTK_DELIMITER")) != NULL) {
+		ztk->input_delim = ztk->output_delim = *env;
+	}
+	if ((env = getenv("ZTK_INPUT_DELIMITER")) != NULL) {
+		ztk->input_delim = *env;
+	}
+	if ((env = getenv("ZTK_OUTPUT_DELIMITER")) != NULL) {
+		ztk->output_delim = *env;
+	}
+
+	/* setup default subscription */
+	if ((env = getenv("ZTK_SUBSCRIBE")) != NULL) {
+		char *a, *b;
+		a = b = env;
+		for (;;) {
+			while (*b && *b != '|')
+				b++;
+
+			if (a != b)
+				s_ztk_configure_sockopt(ztk, ZMQ_SUBSCRIBE, a, b - a);
+
+			if (!*b)
+				break;
+			if (*b == '|')
+				a = ++b;
+		}
+	}
+
+	/* setup default identity */
+	if ((env = getenv("ZTK_IDENTITY")) != NULL) {
+		s_ztk_configure_sockopt(ztk, ZMQ_IDENTITY, env, strlen(env));
+	}
+
+	/* setup default timeout */
+	if ((env = getenv("ZTK_TIMEOUT")) != NULL) {
+		int t = atoi(env);
+		if (t > 0) {
+			s_ztk_configure_sockopt(ztk, ZMQ_LINGER,   &t, sizeof(t));
+			s_ztk_configure_sockopt(ztk, ZMQ_SNDTIMEO, &t, sizeof(t));
+			s_ztk_configure_sockopt(ztk, ZMQ_RCVTIMEO, &t, sizeof(t));
+			ztk->poll.timeout = t;
+		}
+	}
+
 	struct option long_opts[] = {
 		{ "help",                   no_argument, NULL,    'h' },
 		{ "verbose",                no_argument, NULL,    'v' },
