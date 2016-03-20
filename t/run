@@ -1,2 +1,7 @@
 #!/bin/bash
+s=$(( 101 - ($(date +%s) % 100) ))
+if [[ $s -le 5 ]]; then
+	echo >&2 "too close to a 100s boundary, sleeping ${s}s to rollover..."
+	sleep $s
+fi
 timeout 30 /bin/bash -s <<<'source t/lib; source $1' $@
