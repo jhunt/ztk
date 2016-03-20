@@ -24,6 +24,7 @@ SUB_PID=$!
  for L in {A,B,C,D,E,F,G,H}; do
    echo "${L}${L}.TOPIC|payload"
   done) | ./ztk pub --bind ${ENDPOINT}
+sleep 1
 kill -TERM ${SUB_PID}
 
 line_ok ${DATAFILE}.2 1 "AA.TOPIC|payload"
@@ -38,6 +39,7 @@ SUB_PID=$!
  for L in {A,B,C,D,E,F,G,H}; do
    echo "${L}${L}.TOPIC|payload"
   done) | ./ztk pub --bind ${ENDPOINT}
+sleep 1
 kill -TERM ${SUB_PID}
 
 line_ok ${DATAFILE}.3 1 "AA.TOPIC|payload"
@@ -53,6 +55,7 @@ SUB_PID=$!
  for L in {A,B,C,D,E,F,G,H}; do
    echo "${L}${L}.TOPIC|payload"
   done) | ./ztk pub --bind ${ENDPOINT}
+sleep 1
 kill -TERM ${SUB_PID}
 
 line_ok ${DATAFILE}.4 1 "AA.TOPIC|payload"
