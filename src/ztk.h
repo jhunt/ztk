@@ -49,6 +49,7 @@ typedef struct {
 
 	uint8_t output;
 	char    output_delim;
+	int     output_npdus;
 
 	struct {
 		zmq_pollitem_t *items;
@@ -86,7 +87,9 @@ int ztk_poll(ZTK *cfg);
 ztk_peer_t *ztk_next(ZTK *cfg, int events);
 pdu_t *ztk_reply(ZTK *cfg, pdu_t *pdu, FILE *io);
 pdu_t *ztk_pdu(ZTK *cfg, FILE *io);
+void ztk_print_preamble(ZTK *cfg, FILE *io);
 void ztk_print(ZTK *cfg, pdu_t *pdu, FILE *io);
+void ztk_print_postamble(ZTK *cfg, FILE *io);
 void ztk_debugf(ZTK *cfg, const char *fmt, ...);
 void ztk_vdebugf(ZTK *cfg, const char *fmt, va_list ap);
 

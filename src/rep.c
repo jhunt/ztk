@@ -32,6 +32,8 @@ int ztk_rep(int argc, char **argv)
 	if (ztk_sockets(ztk, ZMQ_REP) != 0)
 		return 2;
 
+	ztk_print_preamble(ztk, stdout);
+
 	/* recv */
 	signal_handlers();
 	while (!signalled()) {
@@ -49,5 +51,6 @@ int ztk_rep(int argc, char **argv)
 		}
 	}
 
+	ztk_print_postamble(ztk, stdout);
 	return ztk_shutdown(ztk);
 }

@@ -1,0 +1,79 @@
+#!./t/run
+
+ENDPOINT="ipc://${DATADIR}/formats.1"
+./ztk pull --bind ${ENDPOINT} --output json > ${DATAFILE} &
+PULL_PID=$!
+
+(sleep 1 ; cat <<EOF) | ./ztk push --connect ${ENDPOINT}
+STARTUP
+DATA|payload|12345
+DATA|single 'quotes'
+DATA|double "quotes"
+DATA|colon:separated
+EOF
+kill -TERM ${PULL_PID}
+
+line_ok ${DATAFILE} 1 '[{"type":"STARTUP","frames":[]},'
+line_ok ${DATAFILE} 2 ' {"type":"DATA","frames":["payload","12345"]},'
+line_ok ${DATAFILE} 3 ' {"type":"DATA","frames":["single '"'"'quotes'"'"'"]},'
+line_ok ${DATAFILE} 4 ' {"type":"DATA","frames":["double \"quotes\""]},'
+line_ok ${DATAFILE} 5 ' {"type":"DATA","frames":["colon:separated"]}]'
+
+
+
+ENDPOINT="ipc://${DATADIR}/formats.2"
+./ztk pull --bind ${ENDPOINT} --output yaml > ${DATAFILE} &
+PULL_PID=$!
+
+(sleep 1 ; cat <<EOF) | ./ztk push --connect ${ENDPOINT}
+STARTUP
+DATA|payload|12345
+DATA|single 'quotes'
+DATA|double "quotes"
+DATA|colon:separated
+EOF
+kill -TERM ${PULL_PID}
+
+line_ok ${DATAFILE}  1 '---'
+line_ok ${DATAFILE}  2 '- type: STARTUP'
+line_ok ${DATAFILE}  3 '  frames: []'
+line_ok ${DATAFILE}  4 '- type: DATA'
+line_ok ${DATAFILE}  5 '  frames:'
+line_ok ${DATAFILE}  6 '  - payload'
+line_ok ${DATAFILE}  7 '  - 12345'
+line_ok ${DATAFILE}  8 '- type: DATA'
+line_ok ${DATAFILE}  9 '  frames:'
+line_ok ${DATAFILE} 10 '  - single '"'"'quotes'"'"
+line_ok ${DATAFILE} 11 '- type: DATA'
+line_ok ${DATAFILE} 12 '  frames:'
+line_ok ${DATAFILE} 13 '  - "double \"quotes\""'
+line_ok ${DATAFILE} 14 '- type: DATA'
+line_ok ${DATAFILE} 15 '  frames:'
+line_ok ${DATAFILE} 16 '  - "colon:separated"'
+
+
+
+ENDPOINT="ipc://${DATADIR}/formats.3"
+./ztk pull --bind ${ENDPOINT} --output json > ${DATAFILE} &
+PULL_PID=$!
+
+(sleep 1 ; cat <<EOF) | ./ztk push --connect ${ENDPOINT}
+EOF
+kill -TERM ${PULL_PID}
+
+line_ok ${DATAFILE} 1 '[]'
+
+
+
+ENDPOINT="ipc://${DATADIR}/formats.4"
+./ztk pull --bind ${ENDPOINT} --output yaml > ${DATAFILE} &
+PULL_PID=$!
+
+(sleep 1 ; cat <<EOF) | ./ztk push --connect ${ENDPOINT}
+EOF
+kill -TERM ${PULL_PID}
+
+line_ok ${DATAFILE} 1 '---'
+line_ok ${DATAFILE} 2 '[]'
+
+# vim:ft=sh

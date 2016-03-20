@@ -21,6 +21,85 @@
 #include <string.h>
 #include <getopt.h>
 
+static char* s_yaml_quote(const char *s)
+{
+	int needs_quoted = 0;
+	size_t quoted_len = 0;
+	char *q, *quoted;
+	const char *p;
+
+	for (p = s; *p; p++) {
+		switch (*p) {
+		case '"':
+		case '\\':
+			needs_quoted = 1;
+			quoted_len++; /* for '\' */
+			break;
+
+		case ':':
+			needs_quoted = 1;
+			break;
+		}
+		quoted_len++;
+	}
+
+	if (needs_quoted) {
+		quoted_len += 2;
+	}
+
+	quoted = calloc(quoted_len + 1, sizeof(char));
+	q = quoted;
+	if (needs_quoted) {
+		*q++ = '"';
+	}
+	for (p = s; *p;) {
+		switch (*p) {
+		case '"':
+		case '\\':
+			*q++ = '\\';
+			break;
+		}
+		*q++ = *p++;
+	}
+	if (needs_quoted) {
+		*q++ = '"';
+	}
+
+	return quoted;
+}
+
+static char* s_json_quote(const char *s)
+{
+	size_t quoted_len = 2;
+	char *q, *quoted;
+	const char *p;
+
+	for (p = s; *p; p++) {
+		switch (*p) {
+		case '"':
+		case '\\':
+			quoted_len++; /* for '\' */
+			break;
+		}
+		quoted_len++;
+	}
+
+	quoted = calloc(quoted_len + 1, sizeof(char));
+	*quoted = '"';
+	for (q = quoted + 1, p = s; *p;) {
+		switch (*p) {
+		case '"':
+		case '\\':
+			*q++ = '\\';
+			break;
+		}
+		*q++ = *p++;
+	}
+	*q = '"';
+
+	return quoted;
+}
+
 static void s_ztk_configure_bind(ZTK *ztk, const char *peer)
 {
 	ztk_peer_t *z = vmalloc(sizeof(ztk_peer_t));
@@ -137,11 +216,11 @@ ZTK* ztk_configure(const char *program, int argc, char **argv)
 
 		case 'o': /* --output */
 			if (strcasecmp(optarg, "yaml") == 0 || strcasecmp(optarg, "yml") == 0)
-				ztk->input = FORMAT_YAML;
+				ztk->output = FORMAT_YAML;
 			else if (strcasecmp(optarg, "json") == 0)
-				ztk->input = FORMAT_JSON;
+				ztk->output = FORMAT_JSON;
 			else
-				ztk->input = FORMAT_DELIM;
+				ztk->output = FORMAT_DELIM;
 			break;
 
 		case 'd': /* --delimiter */
@@ -513,18 +592,106 @@ pdu_t *ztk_pdu(ZTK *ztk, FILE *io)
 	return ztk_reply(ztk, NULL, io);
 }
 
+void ztk_print_preamble(ZTK *ztk, FILE *io)
+{
+	ztk->output_npdus = 0;
+
+	switch (ztk->output) {
+	case FORMAT_JSON:
+		fprintf(io, "[");
+		break;
+
+	case FORMAT_YAML:
+		fprintf(io, "---\n");
+		break;
+	}
+}
+
 void ztk_print(ZTK *ztk, pdu_t *pdu, FILE *io)
 {
-	char *frame;
+	char *frame, *esc;
 	int i = 1;
 
-	fprintf(io, "%s", pdu_type(pdu));
+	switch (ztk->output) {
+	case FORMAT_JSON:
+		esc = s_json_quote(pdu_type(pdu));
+		if (ztk->output_npdus > 0) {
+			fprintf(io, ",\n ");
+		}
+		fprintf(io, "{\"type\":%s,\"frames\":[", esc);
+		free(esc);
+		break;
+
+	case FORMAT_YAML:
+		esc = s_yaml_quote(pdu_type(pdu));
+		if (pdu_size(pdu) == 1) { /* just the type */
+			fprintf(io, "- type: %s\n  frames: []\n", esc);
+		} else {
+			fprintf(io, "- type: %s\n  frames:\n", esc);
+		}
+		free(esc);
+		break;
+
+	default:
+		fprintf(io, "%s", pdu_type(pdu));
+		break;
+	}
+
+
+	const char *json_frame_sep = "";
 	while ((frame = pdu_string(pdu, i++)) != NULL) {
-		fprintf(io, "%c%s", ztk->output_delim, frame);
+		switch (ztk->output) {
+		case FORMAT_JSON:
+			esc = s_json_quote(frame);
+			fprintf(io, "%s%s", json_frame_sep, esc);
+			json_frame_sep = ",";
+			free(esc);
+			break;
+
+		case FORMAT_YAML:
+			esc = s_yaml_quote(frame);
+			fprintf(io, "  - %s\n", esc);
+			free(esc);
+			break;
+
+		default:
+			fprintf(io, "%c%s", ztk->output_delim, frame);
+			break;
+		}
 		free(frame);
 	}
-	fprintf(io, "\n");
+
+	switch (ztk->output) {
+	case FORMAT_JSON:
+		fprintf(io, "]}");
+		break;
+
+	case FORMAT_YAML:
+		/* explicitly DON'T print a newline */
+		break;
+
+	default:
+		fprintf(io, "\n");
+		break;
+	}
+
 	fflush(io);
+	ztk->output_npdus++;
+}
+
+void ztk_print_postamble(ZTK *ztk, FILE *io)
+{
+	switch (ztk->output) {
+	case FORMAT_JSON:
+		fprintf(io, "]\n");
+		break;
+
+	case FORMAT_YAML:
+		if (ztk->output_npdus == 0) {
+			fprintf(io, "[]\n");
+		}
+		break;
+	}
 }
 
 void ztk_debugf(ZTK *cfg, const char *fmt, ...)

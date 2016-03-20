@@ -32,6 +32,8 @@ int ztk_req(int argc, char **argv)
 	if (ztk_sockets(ztk, ZMQ_REQ) != 0)
 		return 2;
 
+	ztk_print_preamble(ztk, stdout);
+
 	pdu_t *q, *a;
 	while ((q = ztk_pdu(ztk, stdin))) {
 		ztk_peer_t *e;
@@ -45,5 +47,6 @@ int ztk_req(int argc, char **argv)
 		pdu_free(q);
 	}
 
+	ztk_print_postamble(ztk, stdout);
 	return ztk_shutdown(ztk);
 }
