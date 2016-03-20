@@ -146,6 +146,7 @@ ZTK* ztk_configure(const char *program, int argc, char **argv)
 		{ "help",                   no_argument, NULL,    'h' },
 		{ "verbose",                no_argument, NULL,    'v' },
 		{ "quiet",                  no_argument, NULL,    'q' },
+		{ "relative",               no_argument, NULL,    'T' },
 
 		{ "input",            required_argument, NULL,    'i' },
 		{ "output",           required_argument, NULL,    'o' },
@@ -180,7 +181,7 @@ ZTK* ztk_configure(const char *program, int argc, char **argv)
 		{ "output-delimiter", required_argument, NULL, '\021' },
 		{ 0, 0, 0, 0 },
 	};
-	const char *short_opts = "hvqi:o:d:l:c:S:I:r:64";
+	const char *short_opts = "hvqTi:o:d:l:c:S:I:r:64";
 
 	union {
 		int     i;
@@ -225,6 +226,10 @@ ZTK* ztk_configure(const char *program, int argc, char **argv)
 
 		case 'd': /* --delimiter */
 			ztk->input_delim = ztk->output_delim = optarg[0];
+			break;
+
+		case 'T': /* --relative */
+			ztk->relative_ts = 1;
 			break;
 
 		case 'l': /* --bind */

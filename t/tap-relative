@@ -1,0 +1,38 @@
+#!./t/run
+
+REAL_ENDPOINT="ipc://${DATADIR}/real"
+FAKE_ENDPOINT="ipc://${DATADIR}/fake"
+
+NOW=$(date +%s | sed -e 's/..$/xx.xxx/')
+(
+  sleep 1
+  echo "FIRST"
+  sleep 1
+  echo "SECOND"
+  echo "THIRD"
+) | ./ztk pub --bind ${REAL_ENDPOINT} > ${DATAFILE}.pub &
+
+./ztk tap pub-sub --relative --bind ${FAKE_ENDPOINT} --connect ${REAL_ENDPOINT} > ${DATAFILE}.tap &
+TAP_PID=$!
+
+./ztk sub --connect ${FAKE_ENDPOINT} > ${DATAFILE}.out &
+SUB_PID=$!
+
+sleep 3
+kill -TERM ${TAP_PID}
+kill -TERM ${SUB_PID}
+
+line_ok ${DATAFILE}.out 1 "FIRST"
+line_ok ${DATAFILE}.out 2 "SECOND"
+line_ok ${DATAFILE}.out 3 "THIRD"
+
+sed -i'' -e 's/\.[0-9][0-9][0-9])/.xxx)/' ${DATAFILE}.tap
+line_ok ${DATAFILE}.tap  1 "<(  +1.xxx)  1:[ FIRST ]"
+line_ok ${DATAFILE}.tap  2 " (  +1.xxx)> 1:[ FIRST ]"
+line_ok ${DATAFILE}.tap  3 "<(  +2.xxx)  1:[ SECOND ]"
+line_ok ${DATAFILE}.tap  4 " (  +2.xxx)> 1:[ SECOND ]"
+line_ok ${DATAFILE}.tap  5 "<(  +2.xxx)  1:[ THIRD ]"
+line_ok ${DATAFILE}.tap  6 " (  +2.xxx)> 1:[ THIRD ]"
+
+exit 0
+# vim:ft=sh

@@ -22,16 +22,26 @@
 #define INGRESS 1
 #define EGRESS  2
 
+static uint64_t T0 = 0;
+
 static void s_ztk_debugf(pdu_t *pdu, FILE *io, uint64_t ts, int dir)
 {
 	char *frame;
 	int i = 1;
 
-	fprintf(io, "%c(% 12.3lf)%c %i:[ ",
-			(dir == INGRESS ? '<' : ' '),
-			ts / 1000.0,
-			(dir ==  EGRESS ? '>' : ' '),
-			pdu_size(pdu));
+	if (T0 > 0) {
+		fprintf(io, "%c(%+8.3lf)%c %i:[ ",
+				(dir == INGRESS ? '<' : ' '),
+				(ts - T0) / 1000.0,
+				(dir ==  EGRESS ? '>' : ' '),
+				pdu_size(pdu));
+	} else {
+		fprintf(io, "%c(% 12.3lf)%c %i:[ ",
+				(dir == INGRESS ? '<' : ' '),
+				ts / 1000.0,
+				(dir ==  EGRESS ? '>' : ' '),
+				pdu_size(pdu));
+	}
 
 	fprintf(io, "%s", pdu_type(pdu));
 	while ((frame = pdu_string(pdu, i++)) != NULL) {
@@ -49,6 +59,10 @@ int ztk_tap(int argc, char **argv)
 	if (ztk->argc <= 0) {
 		fprintf(stderr, "%s: you must specify an architecture (pub-sub, pull-push, etc.)\n", argv[0]);
 		return 1;
+	}
+
+	if (ztk->relative_ts) {
+		T0 = time_ms();
 	}
 
 	int bind_sock;

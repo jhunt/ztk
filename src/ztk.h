@@ -44,6 +44,8 @@ typedef struct {
 	int     argc;
 	char  **argv;
 
+	int     relative_ts;
+
 	uint8_t input;
 	char    input_delim;
 
