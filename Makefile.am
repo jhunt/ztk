@@ -23,7 +23,7 @@ ACLOCAL_AMFLAGS  = -I build
 AM_CFLAGS = -Wall -Wextra @GCOV_CFLAGS@
 AM_LDFLAGS = @GCOV_LDFLAGS@
 
-CORE_SRC := src/ztkh. src/ztk.c
+CORE_SRC := src/ztk.h src/ztk.c
 CORE_SRC += src/push.c src/pull.c
 CORE_SRC += src/pub.c src/sub.c
 CORE_SRC += src/req.c src/rep.c
@@ -42,6 +42,7 @@ check_SCRIPTS = t/arg-validation t/invoke t/timeout t/delim \
                 t/tap.pub-sub t/tap.pull-push t/tap.push-pull t/tap.sub-pub \
                 t/debug t/tap-relative
 TESTS = $(check_SCRIPTS)
+dist_check_SCRIPTS=$(check_SCRIPTS) t/run t/lib
 
 ############################################################
 
