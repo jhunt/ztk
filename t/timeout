@@ -9,7 +9,7 @@ PUB_PID=$!
 
 # try to consume from our publisher (incorrectly) with
 # a dealer.  after 120ms, it should timeout and exit
-./ztk dealer --connect ${ENDPOINT} --timeout 120 > ${DATAFILE}
+echo "DEAL" | ./ztk dealer --connect ${ENDPOINT} --timeout 120 > ${DATAFILE}
 file_is_empty ${DATAFILE}
 
 # let's try it with no one bound to the socket
