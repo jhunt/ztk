@@ -1,4 +1,5 @@
-#!./t/run
+#!/bin/bash
+source ${srcdir}/t/lib
 
 ENDPOINT="ipc://${DATADIR}/drouter.1"
 cat <<EOF |./ztk router --bind ${ENDPOINT} > ${DATAFILE}.router &

@@ -1,4 +1,5 @@
-#!./t/run
+#!/bin/bash
+source ${srcdir}/t/lib
 
 ENDPOINT="ipc://${DATADIR}/reqrep.1"
 cat <<EOF |./ztk rep --bind ${ENDPOINT} > ${DATAFILE}.rep &

@@ -22,6 +22,7 @@ ACLOCAL_AMFLAGS  = -I build
 
 AM_CFLAGS = -Wall -Wextra @GCOV_CFLAGS@
 AM_LDFLAGS = @GCOV_LDFLAGS@
+LOG_DRIVER = $(top_srcdir)/t/run
 
 CORE_SRC := src/ztk.h src/ztk.c
 CORE_SRC += src/push.c src/pull.c
