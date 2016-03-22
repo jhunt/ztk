@@ -2,7 +2,7 @@
 
 DATADIR=$(mktemp -d)
 DATAFILE=${DATADIR}/data
-trap 'rm -rf ${DATADIR}' EXIT TERM QUIT INT
+trap 'rm -rf ${DATADIR}; exit $?' EXIT TERM QUIT INT
 
 sleepcat() {
 	sleep ${1:-1}
