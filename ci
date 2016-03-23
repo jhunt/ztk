@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -ex
 
+WANT_LIBSODIUM=1.0.8
+WANT_LIBZMQ=4.1.4
+WANT_LIBVIGOR=1.2.10
+
 mkdir tmp
 BUILD_PREFIX=$PWD/tmp
 
@@ -16,16 +20,16 @@ LD_LIBRARY_PATH="${BUILD_PREFIX}/lib"
 export LD_LIBRARY_PATH
 
 # dep: libsodium
-git clone --depth 1 git://github.com/jedisct1/libsodium.git
-( cd libsodium; ./autogen.sh; ./configure "${CONFIG_OPTS[@]}"; make check; make install)
+curl -Ls https://github.com/jedisct1/libsodium/releases/download/${WANT_LIBSODIUM}/libsodium-${WANT_LIBSODIUM}.tar.gz | tar -xz
+(cd libsodium-${WANT_LIBSODIUM}; ./configure "${CONFIG_OPTS[@]}"; make install)
 
 # dep: libzmq
-git clone --depth 1 git://github.com/zeromq/libzmq.git
-( cd libzmq; ./autogen.sh; ./configure "${CONFIG_OPTS[@]}" --with-libsodium=yes; make check; make install)
+curl -Ls http://download.zeromq.org/zeromq-${WANT_LIBZMQ}.tar.gz | tar -xz
+(cd libzmq-${WANT_LIBZMQ}; ./configure "${CONFIG_OPTS[@]}" --with-libsodium=yes; make install)
 
 # dep: libvigor
-git clone --depth 1 git://github.com/filefrog/libvigor.git
-( cd libvigor; ./bootstrap; ./configure "${CONFIG_OPTS[@]}" --without-ctap; make install)
+curl -Ls https://github.com/jhunt/libvigor/releases/download/v${WANT_LIBVIGOR}/ctap-${WANT_LIBVIGOR}.tar.gz | tar -xz
+(cd libvigor-${WANT_LIBVIGOR}; ./configure "${CONFIG_OPTS[@]}"; make install)
 
 ./bootstrap
 ./configure "${CONFIG_OPTS[@]}"
