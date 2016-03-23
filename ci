@@ -28,7 +28,7 @@ curl -Ls http://download.zeromq.org/zeromq-${WANT_LIBZMQ}.tar.gz | tar -xz
 (cd zeromq-${WANT_LIBZMQ}; ./configure "${CONFIG_OPTS[@]}" --with-libsodium=yes; make install)
 
 # dep: libvigor
-curl -Ls https://github.com/jhunt/libvigor/releases/download/v${WANT_LIBVIGOR}/ctap-${WANT_LIBVIGOR}.tar.gz | tar -xz
+curl -Ls https://github.com/jhunt/libvigor/releases/download/v${WANT_LIBVIGOR}/libvigor-${WANT_LIBVIGOR}.tar.gz | tar -xz
 (cd libvigor-${WANT_LIBVIGOR}; ./configure "${CONFIG_OPTS[@]}"; make install)
 
 ./bootstrap
