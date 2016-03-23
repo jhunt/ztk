@@ -1,6 +1,8 @@
 ztk - ZeroMQ Toolkit
 ====================
 
+[![Travis](https://img.shields.io/travis/jhunt/ztk.svg)](https://travis-ci.org/jhunt/ztk)
+
 **ztk** is a simple toolkit for interfacing with the excellent ZeroMQ
 message transport library.  It provides a set of small, sharp and
 simple tools to bind and connect to sockets of all types.
